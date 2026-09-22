@@ -333,16 +333,11 @@ Device* Instance::CreateDevice(QueueFlagBits requiredQueues, VkPhysicalDeviceFea
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    // Enable device-specific extensions and validation layers
+    // Device layers are not supported in modern Vulkan; only instance layers should be enabled.
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-    if (ENABLE_VALIDATION) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-    } else {
-        createInfo.enabledLayerCount = 0;
-    }
+    createInfo.enabledLayerCount = 0;
+    createInfo.ppEnabledLayerNames = nullptr;
 
     VkDevice vkDevice;
     // Create logical device

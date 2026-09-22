@@ -1,0 +1,2 @@
+cd bin
+.\bin\vulkan_grass_rendering.exe

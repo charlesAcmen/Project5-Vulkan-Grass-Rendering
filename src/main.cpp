@@ -65,7 +65,9 @@ namespace {
     }
 }
 
-int main() {
+namespace {
+
+int RunApplication() {
     static constexpr char* applicationName = "Vulkan Grass Rendering";
     InitializeWindow(640, 480, applicationName);
 
@@ -161,7 +163,19 @@ int main() {
     delete renderer;
     delete swapChain;
     delete device;
+    vkDestroySurfaceKHR(instance->GetVkInstance(), surface, nullptr);
     delete instance;
     DestroyWindow();
     return 0;
+}
+
+} // namespace
+
+int main() {
+    try {
+        return RunApplication();
+    } catch (const std::exception& exception) {
+        std::fprintf(stderr, "Fatal error: %s\n", exception.what());
+        return EXIT_FAILURE;
+    }
 }

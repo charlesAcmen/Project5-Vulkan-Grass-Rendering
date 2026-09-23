@@ -317,10 +317,58 @@ void Renderer::CreateModelDescriptorSets() {
     // Update descriptor sets
     vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
-
+//contract:
+// layout(set = 1, binding = 0) uniform GrassModelBufferObject {
+//     mat4 model;
+// } grassModel;
 void Renderer::CreateGrassDescriptorSets() {
-    // TODO: Create Descriptor sets for the grass.
-    // This should involve creating descriptor sets which point to the model matrix of each group of grass blades
+    //create descriptor sets for each group of blades（not grass）
+    //model matrix is shared across every group of blades
+    grassDescriptorSets.resize(scene->GetBlades().size());
+    if (grassDescriptorSets.empty()) {
+        return;
+    }
+
+    std::vector<VkDescriptorSetLayout> layouts(grassDescriptorSets.size(), grassDescriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    //binding 0,still not attached to specific buffer
+    if (vkAllocateDescriptorSets(logicalDevice, &allocInfo, grassDescriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate grass descriptor sets");
+    }
+
+    std::vector<VkDescriptorBufferInfo> bufferInfos(grassDescriptorSets.size());
+    std::vector<VkWriteDescriptorSet> descriptorWrites(grassDescriptorSets.size());
+    for (uint32_t i = 0; i < grassDescriptorSets.size(); ++i) {
+        // Fill in the buffer info for each descriptor set
+        //returns struct ModelBufferObject {
+        //     glm::mat4 modelMatrix;
+        // };
+        bufferInfos[i].buffer = scene->GetBlades()[i]->GetModelBuffer();
+        //glm::mat4
+        bufferInfos[i].offset = 0;
+        bufferInfos[i].range = sizeof(ModelBufferObject);
+
+        //write type
+        descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[i].dstSet = grassDescriptorSets[i];
+        //binding 0,if binding were an array,fill in the 0th element
+        descriptorWrites[i].dstBinding = 0;
+        //not an array
+        descriptorWrites[i].dstArrayElement = 0;
+        //shared
+        descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        //sync with CreateGrassDescriptorSetLayout()
+        descriptorWrites[i].descriptorCount = 1;
+        descriptorWrites[i].pBufferInfo = &bufferInfos[i];
+    }
+    //source table is binded to pipeline layout, destination table is binded to descriptor set
+    //grass.tese shader will use the model matrix to transform the grass blades
+    vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void Renderer::CreateTimeDescriptorSet() {

@@ -24,4 +24,10 @@ out gl_PerVertex {
 
 void main() {
 	// TODO: Write gl_Position and any other shader outputs
+    // Tessellation evaluation performs the final model/view/projection transform.
+    gl_Position = vec4(inV0.xyz, 1.0);
+    outV0 = inV0;
+    outV1 = inV1;
+    outV2 = inV2;
+    outUp = inUp;
 }

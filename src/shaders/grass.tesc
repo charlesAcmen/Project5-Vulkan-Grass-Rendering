@@ -10,6 +10,26 @@ layout(set = 0, binding = 0) uniform CameraBufferObject {
 } camera;
 
 // TODO: Declare tessellation control shader inputs and outputs
+layout(location = 0) in vec4 inV0[];
+layout(location = 1) in vec4 inV1[];
+layout(location = 2) in vec4 inV2[];
+layout(location = 3) in vec4 inUp[];
+
+layout(location = 0) out vec4 outV0[];
+layout(location = 1) out vec4 outV1[];
+layout(location = 2) out vec4 outV2[];
+layout(location = 3) out vec4 outUp[];
+
+// Match the vertex stage's explicitly declared built-in block.  The tessellation
+// evaluation stage computes its own final position, but this passthrough keeps
+// the Vertex -> Tessellation Control SPIR-V interface valid.
+in gl_PerVertex {
+    vec4 gl_Position;
+} gl_in[];
+
+out gl_PerVertex {
+    vec4 gl_Position;
+} gl_out[];
 
 void main() {
     // TODO: Write any shader outputs

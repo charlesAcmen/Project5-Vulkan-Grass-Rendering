@@ -2,10 +2,6 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(set = 1, binding = 0) uniform ModelBufferObject {
-    mat4 model;
-};
-
 // TODO: Declare vertex shader inputs and outputs
 // Blade is a 64-byte vertex record. Keep the locations in sync with Blade::getAttributeDescriptions.
 layout(location = 0) in vec4 inV0;

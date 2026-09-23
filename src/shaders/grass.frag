@@ -2,6 +2,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 // TODO: Declare fragment shader inputs
+layout(location = 0) in float inHeightFactor;
+layout(location = 1) in vec3 inNormal;
 
 layout(location = 0) out vec4 outColor;
 

@@ -205,20 +205,11 @@ void Renderer::CreateDescriptorPool() {
     const uint32_t modelCount = static_cast<uint32_t>(scene->GetModels().size());
     const uint32_t bladeGroupCount = static_cast<uint32_t>(scene->GetBlades().size());
 
-    // Keep the pool counts aligned with the descriptor sets will contain
+    // Keep the pool counts aligned with the explicitly allocated descriptor sets.
+    // unit all uniform buffer descriptor rather than separate by camera,models+blades,time etc
     std::vector<VkDescriptorPoolSize> poolSizes = {
-        // Camera
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , 1},
-
-        // Models + Blades
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER , static_cast<uint32_t>(scene->GetModels().size() + scene->GetBlades().size()) },
-
-        // Models + Blades
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , static_cast<uint32_t>(scene->GetModels().size() + scene->GetBlades().size()) },
-
-        // Time (compute)
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , 1 },
-
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 + modelCount + bladeGroupCount },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, modelCount },
         // TODO: Add any additional types and counts of descriptors you will need to allocate
     };
 

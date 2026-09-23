@@ -21,13 +21,15 @@ void main() {
     outV2[gl_InvocationID] = inV2[gl_InvocationID];
     outUp[gl_InvocationID] = inUp[gl_InvocationID];
 
-	// TODO: Write any shader outputs
-
-	// TODO: Set level of tesselation
-    // gl_TessLevelInner[0] = ???
-    // gl_TessLevelInner[1] = ???
-    // gl_TessLevelOuter[0] = ???
-    // gl_TessLevelOuter[1] = ???
-    // gl_TessLevelOuter[2] = ???
-    // gl_TessLevelOuter[3] = ???
+    //only one control point.gl_InvocationID == 0 is always true
+    if (gl_InvocationID == 0) {
+        // TODO: Set level of tesselation
+        // One segment across the ribbon and six segments along its Bezier centerline.
+        gl_TessLevelInner[0] = 6.0;
+        gl_TessLevelInner[1] = 1.0;
+        gl_TessLevelOuter[0] = 1.0;
+        gl_TessLevelOuter[1] = 6.0;
+        gl_TessLevelOuter[2] = 1.0;
+        gl_TessLevelOuter[3] = 6.0;
+    }
 }

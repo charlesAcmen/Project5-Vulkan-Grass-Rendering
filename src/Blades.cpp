@@ -49,23 +49,23 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float planeDim) : Mode
     BufferUtils::CreateBufferFromData(device, commandPool, &indirectDraw, sizeof(BladeDrawIndirect), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, numBladesBuffer, numBladesBufferMemory);
 }
 
-VkBuffer Blades::GetBladesBuffer() const {
-    return bladesBuffer;
+VkBuffer Blades::GetSourceBladesBuffer() const {
+    return sourceBladesBuffer;
 }
 
-VkBuffer Blades::GetCulledBladesBuffer() const {
-    return culledBladesBuffer;
+VkBuffer Blades::GetVisibleBladesBuffer() const {
+    return visibleBladesBuffer;
 }
 
-VkBuffer Blades::GetNumBladesBuffer() const {
-    return numBladesBuffer;
+VkBuffer Blades::GetIndirectDrawBuffer() const {
+    return indirectDrawBuffer;
 }
 
 Blades::~Blades() {
-    vkDestroyBuffer(device->GetVkDevice(), bladesBuffer, nullptr);
-    vkFreeMemory(device->GetVkDevice(), bladesBufferMemory, nullptr);
-    vkDestroyBuffer(device->GetVkDevice(), culledBladesBuffer, nullptr);
-    vkFreeMemory(device->GetVkDevice(), culledBladesBufferMemory, nullptr);
-    vkDestroyBuffer(device->GetVkDevice(), numBladesBuffer, nullptr);
-    vkFreeMemory(device->GetVkDevice(), numBladesBufferMemory, nullptr);
+    vkDestroyBuffer(device->GetVkDevice(), sourceBladesBuffer, nullptr);
+    vkFreeMemory(device->GetVkDevice(), sourceBladesBufferMemory, nullptr);
+    vkDestroyBuffer(device->GetVkDevice(), visibleBladesBuffer, nullptr);
+    vkFreeMemory(device->GetVkDevice(), visibleBladesBufferMemory, nullptr);
+    vkDestroyBuffer(device->GetVkDevice(), indirectDrawBuffer, nullptr);
+    vkFreeMemory(device->GetVkDevice(), indirectDrawBufferMemory, nullptr);
 }

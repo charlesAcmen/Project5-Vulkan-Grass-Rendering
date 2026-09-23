@@ -172,6 +172,39 @@ void Renderer::CreateModelDescriptorSetLayout() {
         throw std::runtime_error("Failed to create descriptor set layout");
     }
 }
+//read model matrix uniform buffer from binding 0
+// layout(set = 1, binding = 0) uniform GrassModelBufferObject {
+//     mat4 model;
+// } grassModel;
+void Renderer::CreateGrassDescriptorSetLayout() {
+    // Grass uses a transform buffer but deliberately has no texture binding.
+    VkDescriptorSetLayoutBinding modelLayoutBinding = {};
+    //0th binding,corresponding to layout(set = 1, binding = 0) in GLSL
+    //no .set=1,cause layout only descripts info within one set
+    modelLayoutBinding.binding = 0;
+    //descriptor type is uniform buffer,not combined image sampler
+    //uniform GrassModelBufferObject
+    modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    //only one,not models[100]
+    modelLayoutBinding.descriptorCount = 1;
+    //available to access only in Tessellation Evaluation Shader
+    //i.e. grass.tese
+    // grassModel.model
+    modelLayoutBinding.stageFlags = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
+    //only descriptor with sampler type may use immutable sampler
+    modelLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    //sType is generally required by *CreateInfo
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    //only one binding,not models[100]
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &modelLayoutBinding;
+    //get layout interface template,not filled with any buffer yet
+    if (vkCreateDescriptorSetLayout(logicalDevice, &layoutInfo, nullptr, &grassDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create grass descriptor set layout");
+    }
+}
 
 void Renderer::CreateTimeDescriptorSetLayout() {
     // Describe the binding of the descriptor set layout

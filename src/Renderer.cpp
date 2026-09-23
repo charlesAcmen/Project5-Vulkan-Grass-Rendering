@@ -202,7 +202,10 @@ void Renderer::CreateComputeDescriptorSetLayout() {
 }
 
 void Renderer::CreateDescriptorPool() {
-    // Describe which descriptor types that the descriptor sets will contain
+    const uint32_t modelCount = static_cast<uint32_t>(scene->GetModels().size());
+    const uint32_t bladeGroupCount = static_cast<uint32_t>(scene->GetBlades().size());
+
+    // Keep the pool counts aligned with the descriptor sets will contain
     std::vector<VkDescriptorPoolSize> poolSizes = {
         // Camera
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER , 1},

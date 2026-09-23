@@ -18,6 +18,13 @@ layout(set = 1, binding = 0) uniform GrassModelBufferObject {
 } grassModel;
 
 // TODO: Declare tessellation evaluation shader inputs and outputs
+layout(location = 0) in vec4 inV0[];
+layout(location = 1) in vec4 inV1[];
+layout(location = 2) in vec4 inV2[];
+layout(location = 3) in vec4 inUp[];
+
+layout(location = 0) out float outHeightFactor;
+layout(location = 1) out vec3 outNormal;
 
 void main() {
     float u = gl_TessCoord.x;

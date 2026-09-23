@@ -12,8 +12,14 @@ layout(set = 0, binding = 0) uniform CameraBufferObject {
 // TODO: Declare tessellation control shader inputs and outputs
 
 void main() {
-	// Don't move the origin location of the patch
+    // TODO: Write any shader outputs
+    // Forward one complete Blade record per patch.
+    // Don't move the origin location of the patch
     gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+    outV0[gl_InvocationID] = inV0[gl_InvocationID];
+    outV1[gl_InvocationID] = inV1[gl_InvocationID];
+    outV2[gl_InvocationID] = inV2[gl_InvocationID];
+    outUp[gl_InvocationID] = inUp[gl_InvocationID];
 
 	// TODO: Write any shader outputs
 

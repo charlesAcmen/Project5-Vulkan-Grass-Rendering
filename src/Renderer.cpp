@@ -932,20 +932,6 @@ void Renderer::RecordCommandBuffers() {
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-        std::vector<VkBufferMemoryBarrier> barriers(scene->GetBlades().size());
-        for (uint32_t j = 0; j < barriers.size(); ++j) {
-            barriers[j].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-            barriers[j].srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barriers[j].dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-            barriers[j].srcQueueFamilyIndex = device->GetQueueIndex(QueueFlags::Compute);
-            barriers[j].dstQueueFamilyIndex = device->GetQueueIndex(QueueFlags::Graphics);
-            barriers[j].buffer = scene->GetBlades()[j]->GetNumBladesBuffer();
-            barriers[j].offset = 0;
-            barriers[j].size = sizeof(BladeDrawIndirect);
-        }
-
-        vkCmdPipelineBarrier(commandBuffers[i], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, barriers.size(), barriers.data(), 0, nullptr);
-
         // Bind the camera descriptor set. This is set 0 in all pipelines so it will be inherited
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, 1, &cameraDescriptorSet, 0, nullptr);
 

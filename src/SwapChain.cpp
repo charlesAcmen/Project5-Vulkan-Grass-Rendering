@@ -233,6 +233,12 @@ bool SwapChain::Present() {
 
     VkResult result = vkQueuePresentKHR(device->GetQueue(QueueFlags::Present), &presentInfo);
 
+    // situations if the swap chain is no longer compatible with the surface:
+    // resizing in progress, window minimized, or window moved to a different monitor
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        return false;
+    }
+
     if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to present swap chain image");
     }

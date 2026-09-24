@@ -213,11 +213,6 @@ bool SwapChain::Acquire() {
         throw std::runtime_error("Failed to acquire swap chain image");
     }
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        Recreate();
-        return false;
-    }
-
     return true;
 }
 

@@ -151,7 +151,6 @@ int RunApplication() {
 
     while (!ShouldQuit()) {
         glfwPollEvents();
-        scene->UpdateTime();
         renderer->Frame();
     }
 

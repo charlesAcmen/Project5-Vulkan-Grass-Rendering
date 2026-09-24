@@ -1101,6 +1101,8 @@ void Renderer::Frame() {
 
     computeSubmitInfo.commandBufferCount = 1;
     computeSubmitInfo.pCommandBuffers = &computeCommandBuffer;
+    computeSubmitInfo.signalSemaphoreCount = 1;
+    computeSubmitInfo.pSignalSemaphores = &computeFinishedSemaphore;
 
     if (vkQueueSubmit(device->GetQueue(QueueFlags::Compute), 1, &computeSubmitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer");
@@ -1115,9 +1117,9 @@ void Renderer::Frame() {
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = { swapChain->GetImageAvailableVkSemaphore() };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    submitInfo.waitSemaphoreCount = 1;
+    VkSemaphore waitSemaphores[] = { swapChain->GetImageAvailableVkSemaphore(), computeFinishedSemaphore };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT };
+    submitInfo.waitSemaphoreCount = 2;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 

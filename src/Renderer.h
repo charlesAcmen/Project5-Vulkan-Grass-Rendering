@@ -65,6 +65,12 @@ private:
     std::vector<VkDescriptorSet> modelDescriptorSets;
     std::vector<VkDescriptorSet> grassDescriptorSets;
     VkDescriptorSet timeDescriptorSet;
+    std::vector<VkDescriptorSet> computeDescriptorSets;
+
+    VkSemaphore computeFinishedSemaphore;
+    //used to signal on completion of rendering a frame
+    //so that the next frame can be submitted to the GPU by CPU
+    VkFence inFlightFence;
 
     VkPipelineLayout graphicsPipelineLayout;
     VkPipelineLayout grassPipelineLayout;

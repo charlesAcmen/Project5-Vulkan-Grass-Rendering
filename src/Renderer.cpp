@@ -1079,6 +1079,22 @@ void Renderer::RecordCommandBuffers() {
 }
 
 void Renderer::Frame() {
+    if (vkWaitForFences(logicalDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to wait for the in-flight fence");
+    }
+
+    if (!swapChain->Acquire()) {
+        RecreateSwapChainResources();
+        return;
+    }
+
+    // Time is updated only after the previous frame is complete, so the host
+    // never overwrites the uniform buffer while the compute shader reads it.
+    scene->UpdateTime();
+
+    if (vkResetFences(logicalDevice, 1, &inFlightFence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to reset the in-flight fence");
+    }
 
     VkSubmitInfo computeSubmitInfo = {};
     computeSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

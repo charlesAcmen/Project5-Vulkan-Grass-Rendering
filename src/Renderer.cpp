@@ -901,6 +901,10 @@ void Renderer::CreateFrameResources() {
 }
 
 void Renderer::DestroyFrameResources() {
+    for (size_t i = 0; i < framebuffers.size(); i++) {
+        vkDestroyFramebuffer(logicalDevice, framebuffers[i], nullptr);
+    }
+
     for (size_t i = 0; i < imageViews.size(); i++) {
         vkDestroyImageView(logicalDevice, imageViews[i], nullptr);
     }

@@ -935,6 +935,18 @@ void Renderer::CreateSwapChainResources() {
     RecordCommandBuffers();
 }
 
+void Renderer::RecreateSwapChainResources() {
+    vkDeviceWaitIdle(logicalDevice);
+
+    // Framebuffers and image views must be destroyed before their swap chain.
+    DestroySwapChainResources();
+    swapChain->Recreate();
+
+    const VkExtent2D extent = swapChain->GetVkExtent();
+    camera->UpdateAspectRatio(static_cast<float>(extent.width) / static_cast<float>(extent.height));
+    CreateSwapChainResources();
+}
+
 void Renderer::RecordComputeCommandBuffer() {
     // Specify the command pool and number of buffers to allocate
     VkCommandBufferAllocateInfo allocInfo = {};

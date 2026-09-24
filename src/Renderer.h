@@ -35,7 +35,7 @@ public:
 
     void CreateFrameResources();
     void DestroyFrameResources();
-    void RecreateFrameResources();
+    void RecreateSwapChainResources();
 
     void RecordCommandBuffers();
     void RecordComputeCommandBuffer();
@@ -82,4 +82,7 @@ private:
 
     std::vector<VkCommandBuffer> commandBuffers;
     VkCommandBuffer computeCommandBuffer;
+
+    void DestroySwapChainResources();
+    void CreateSwapChainResources();
 };

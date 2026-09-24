@@ -93,7 +93,8 @@ int RunApplication() {
 
     swapChain = device->CreateSwapChain(surface, 5);
 
-    camera = new Camera(device, 640.f / 480.f);
+    const VkExtent2D initialExtent = swapChain->GetVkExtent();
+    camera = new Camera(device, static_cast<float>(initialExtent.width) / static_cast<float>(initialExtent.height));
 
     VkCommandPoolCreateInfo transferPoolInfo = {};
     transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

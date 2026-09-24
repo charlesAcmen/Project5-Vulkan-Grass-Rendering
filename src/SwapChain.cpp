@@ -202,6 +202,13 @@ bool SwapChain::Acquire() {
         vkQueueWaitIdle(device->GetQueue(QueueFlags::Present));
     }
     VkResult result = vkAcquireNextImageKHR(device->GetVkDevice(), vkSwapChain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        return false;
+    }
+
+    // VK_SUBOPTIMAL_KHR still returns an acquired image and signals
+    // imageAvailableSemaphore. Submit this frame so the semaphore is consumed;
+    // Present() will recreate the swap chain if the surface remains suboptimal.
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("Failed to acquire swap chain image");
     }

@@ -913,9 +913,8 @@ void Renderer::DestroyFrameResources() {
     vkFreeMemory(logicalDevice, depthImageMemory, nullptr);
     vkDestroyImage(logicalDevice, depthImage, nullptr);
 
-    for (size_t i = 0; i < framebuffers.size(); i++) {
-        vkDestroyFramebuffer(logicalDevice, framebuffers[i], nullptr);
-    }
+    framebuffers.clear();
+    imageViews.clear();
 }
 
 void Renderer::RecreateFrameResources() {

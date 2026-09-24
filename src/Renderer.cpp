@@ -1108,11 +1108,6 @@ void Renderer::Frame() {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
 
-    if (!swapChain->Acquire()) {
-        RecreateFrameResources();
-        return;
-    }
-
     // Submit the command buffer
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

@@ -1113,6 +1113,9 @@ void Renderer::Frame() {
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
     VkSemaphore waitSemaphores[] = { swapChain->GetImageAvailableVkSemaphore(), computeFinishedSemaphore };
+    //2 wait semaphore and stages:
+    //imageAvailableSemaphore	COLOR_ATTACHMENT_OUTPUT
+    // computeFinishedSemaphore	VERTEX_INPUT
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT };
     submitInfo.waitSemaphoreCount = 2;
     submitInfo.pWaitSemaphores = waitSemaphores;

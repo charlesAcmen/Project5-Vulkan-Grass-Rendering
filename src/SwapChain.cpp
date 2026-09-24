@@ -243,11 +243,6 @@ bool SwapChain::Present() {
         throw std::runtime_error("Failed to present swap chain image");
     }
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        Recreate();
-        return false;
-    }
-
     return true;
 }
 

@@ -49,7 +49,7 @@ namespace {
           return capabilities.currentExtent;
       } else {
           int width, height;
-          glfwGetWindowSize(window, &width, &height);
+          glfwGetFramebufferSize(window, &width, &height);
           VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
           actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));

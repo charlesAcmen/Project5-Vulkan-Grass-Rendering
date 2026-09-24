@@ -77,7 +77,10 @@ SwapChain::SwapChain(Device* device, VkSurfaceKHR vkSurface, unsigned int numBuf
 void SwapChain::Create() {
     auto* instance = device->GetInstance();
 
-    VkSurfaceCapabilitiesKHR surfaceCapabilities = instance->GetSurfaceCapabilities();
+    VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(instance->GetPhysicalDevice(), vkSurface, &surfaceCapabilities) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to query surface capabilities");
+    }
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(instance->GetSurfaceFormats());
     VkPresentModeKHR presentMode = chooseSwapPresentMode(instance->GetPresentModes());

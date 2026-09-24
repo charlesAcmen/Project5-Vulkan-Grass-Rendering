@@ -917,14 +917,18 @@ void Renderer::DestroyFrameResources() {
     imageViews.clear();
 }
 
-void Renderer::RecreateFrameResources() {
+void Renderer::DestroySwapChainResources() {
     vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
     vkDestroyPipeline(logicalDevice, grassPipeline, nullptr);
     vkDestroyPipelineLayout(logicalDevice, graphicsPipelineLayout, nullptr);
     vkDestroyPipelineLayout(logicalDevice, grassPipelineLayout, nullptr);
     vkFreeCommandBuffers(logicalDevice, graphicsCommandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    commandBuffers.clear();
 
     DestroyFrameResources();
+}
+
+void Renderer::CreateSwapChainResources() {
     CreateFrameResources();
     CreateGraphicsPipeline();
     CreateGrassPipeline();

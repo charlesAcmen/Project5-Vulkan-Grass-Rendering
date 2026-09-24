@@ -18,9 +18,7 @@ namespace {
     void resizeCallback(GLFWwindow* window, int width, int height) {
         if (width == 0 || height == 0) return;
 
-        vkDeviceWaitIdle(device->GetVkDevice());
-        swapChain->Recreate();
-        renderer->RecreateFrameResources();
+        renderer->RecreateSwapChainResources();
     }
 
     bool leftMouseDown = false;

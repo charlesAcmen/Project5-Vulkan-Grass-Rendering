@@ -28,5 +28,6 @@ public:
 
     VkBuffer GetBuffer() const;
     
+    void UpdateAspectRatio(float aspectRatio);
     void UpdateOrbit(float deltaX, float deltaY, float deltaZ);
 };

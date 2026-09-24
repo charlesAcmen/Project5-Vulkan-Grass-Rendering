@@ -1117,7 +1117,7 @@ void Renderer::Frame() {
     }
 
     if (!swapChain->Present()) {
-        RecreateFrameResources();
+        RecreateSwapChainResources();
     }
 }
 

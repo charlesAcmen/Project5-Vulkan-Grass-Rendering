@@ -1139,6 +1139,9 @@ Renderer::~Renderer() {
 
     // TODO: destroy any resources you created
 
+    vkDestroyFence(logicalDevice, inFlightFence, nullptr);
+    vkDestroySemaphore(logicalDevice, computeFinishedSemaphore, nullptr);
+
     vkFreeCommandBuffers(logicalDevice, graphicsCommandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
     vkFreeCommandBuffers(logicalDevice, computeCommandPool, 1, &computeCommandBuffer);
     

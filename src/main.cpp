@@ -142,7 +142,7 @@ int RunApplication() {
 
     renderer = new Renderer(device, swapChain, scene, camera);
 
-    glfwSetWindowSizeCallback(GetGLFWWindow(), resizeCallback);
+    glfwSetFramebufferSizeCallback(GetGLFWWindow(), resizeCallback);
     glfwSetMouseButtonCallback(GetGLFWWindow(), mouseDownCallback);
     glfwSetCursorPosCallback(GetGLFWWindow(), mouseMoveCallback);
 

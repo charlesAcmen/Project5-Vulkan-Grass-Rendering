@@ -472,6 +472,64 @@ void Renderer::CreateTimeDescriptorSet() {
 void Renderer::CreateComputeDescriptorSets() {
     // TODO: Create Descriptor sets for the compute pipeline
     // The descriptors should point to Storage buffers which will hold the grass blades, the culled grass blades, and the output number of grass blades 
+    // Each BladeGroup owns a different source-blade buffer, so each group needs
+    // one descriptor set. A descriptor set is the concrete resource table used
+    // with computeDescriptorSetLayout; it is not one set per individual blade.
+    //
+    // Phase 2 layout(set = 2, binding = 0) exposes only the group's mutable
+    // SourceBlades SSBO to compute.comp. Phase 3 will add visible-blade and
+    // indirect-command output buffers to this table.
+    computeDescriptorSets.resize(scene->GetBlades().size());
+
+    // There is nothing to allocate or update when the scene contains no groups.
+    if (computeDescriptorSets.empty()) {
+        return;
+    }
+
+    // vkAllocateDescriptorSets needs one layout handle per requested set. Every
+    // group uses the same layout definition, but receives a separate set whose
+    // binding 0 will point at that group's own buffer.
+    std::vector<VkDescriptorSetLayout> layouts(computeDescriptorSets.size(), computeDescriptorSetLayout);
+
+    // Describe this allocation request from the shared descriptor pool.
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(layouts.size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    // Allocate the empty resource tables. They have the right layout, but their
+    // binding 0 entries do not reference a VkBuffer until vkUpdateDescriptorSets.
+    if (vkAllocateDescriptorSets(logicalDevice, &allocInfo, computeDescriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate compute descriptor sets");
+    }
+
+    // Prepare one buffer description and one write operation for each group.
+    std::vector<VkDescriptorBufferInfo> bufferInfos(computeDescriptorSets.size());
+    std::vector<VkWriteDescriptorSet> descriptorWrites(computeDescriptorSets.size());
+    for (uint32_t i = 0; i < computeDescriptorSets.size(); ++i) {
+        // Select BladeGroup i's simulation buffer. Compute reads and writes its
+        // Blade records in place; graphics later draws this same source buffer.
+        bufferInfos[i].buffer = scene->GetBlades()[i]->GetSourceBladesBuffer();
+
+        // Expose the complete Blade array, beginning at byte zero of the buffer.
+        bufferInfos[i].offset = 0;
+        bufferInfos[i].range = NUM_BLADES * sizeof(Blade);
+
+        // Write this group's buffer description into binding 0 of this group's
+        // descriptor set. These fields must match CreateComputeDescriptorSetLayout().
+        descriptorWrites[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[i].dstSet = computeDescriptorSets[i];
+        descriptorWrites[i].dstBinding = 0;
+        descriptorWrites[i].dstArrayElement = 0;
+        descriptorWrites[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[i].descriptorCount = 1;
+        descriptorWrites[i].pBufferInfo = &bufferInfos[i];
+    }
+
+    // Commit all CPU-side writes at once: set i now maps compute binding 0 to
+    // BladeGroup i's SourceBladesBuffer.
+    vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void Renderer::CreateGraphicsPipeline() {

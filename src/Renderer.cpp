@@ -275,6 +275,23 @@ void Renderer::CreateDescriptorPool() {
     }
 }
 
+void Renderer::CreateSynchronizationObjects() {
+    VkSemaphoreCreateInfo semaphoreInfo = {};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(logicalDevice, &semaphoreInfo, nullptr, &computeFinishedSemaphore) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create compute-finished semaphore");
+    }
+
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    if (vkCreateFence(logicalDevice, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create in-flight fence");
+    }
+}
+
 void Renderer::CreateCameraDescriptorSet() {
     // Describe the desciptor set
     VkDescriptorSetLayout layouts[] = { cameraDescriptorSetLayout };

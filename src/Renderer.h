@@ -22,6 +22,7 @@ public:
     void CreateComputeDescriptorSetLayout();
 
     void CreateDescriptorPool();
+    void CreateSynchronizationObjects();
 
     void CreateCameraDescriptorSet();
     void CreateModelDescriptorSets();

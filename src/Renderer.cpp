@@ -232,6 +232,23 @@ void Renderer::CreateComputeDescriptorSetLayout() {
     // TODO: Create the descriptor set layout for the compute pipeline
     // Remember this is like a class definition stating why types of information
     // will be stored at each binding
+    VkDescriptorSetLayoutBinding sourceBladesLayoutBinding = {};
+    sourceBladesLayoutBinding.binding = 0;
+    sourceBladesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    sourceBladesLayoutBinding.descriptorCount = 1;
+    sourceBladesLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    sourceBladesLayoutBinding.pImmutableSamplers = nullptr;
+
+    // Phase 2 only mutates the source blades. Phase 3 will extend this layout with
+    // the visible-blade and indirect-command output buffers used by culling.
+    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &sourceBladesLayoutBinding;
+
+    if (vkCreateDescriptorSetLayout(logicalDevice, &layoutInfo, nullptr, &computeDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create compute descriptor set layout");
+    }
 }
 
 void Renderer::CreateDescriptorPool() {
@@ -244,6 +261,7 @@ void Renderer::CreateDescriptorPool() {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 + modelCount + bladeGroupCount },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, modelCount },
         // TODO: Add any additional types and counts of descriptors you will need to allocate
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bladeGroupCount },
     };
 
     VkDescriptorPoolCreateInfo poolInfo = {};
@@ -793,7 +811,7 @@ void Renderer::CreateComputePipeline() {
     computeShaderStageInfo.pName = "main";
 
     // TODO: Add the compute dsecriptor set layout you create to this list
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { cameraDescriptorSetLayout, timeDescriptorSetLayout };
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts = { cameraDescriptorSetLayout, timeDescriptorSetLayout, computeDescriptorSetLayout };
 
     // Create pipeline layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -1116,6 +1134,8 @@ void Renderer::Frame() {
     //2 wait semaphore and stages:
     //imageAvailableSemaphore	COLOR_ATTACHMENT_OUTPUT
     // computeFinishedSemaphore	VERTEX_INPUT
+    //compute shader will write sourceBladesBuffer
+    //vertex input will ayncsly read sourceBladesBuffer
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT };
     submitInfo.waitSemaphoreCount = 2;
     submitInfo.pWaitSemaphores = waitSemaphores;

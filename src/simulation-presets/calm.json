@@ -1,0 +1,18 @@
+{
+  "id": "calm",
+  "label": "Calm",
+  "description": "Small, slow gusts for inspecting recovery and gravity.",
+  "wind_direction": [1.0, 0.0, 0.35],
+  "wind_field_scale": 0.45,
+  "primary_amplitude": 0.15,
+  "secondary_amplitude": 0.05,
+  "primary_angular_speed": 0.55,
+  "secondary_angular_speed": 0.25,
+  "primary_x_wave_number": 0.25,
+  "primary_z_wave_number": 0.12,
+  "secondary_x_wave_number": 0.40,
+  "gravity_direction": [0.0, -1.0, 0.0],
+  "gravity_pull_rate": 0.90,
+  "recovery_rate_scale": 1.00,
+  "front_gravity_scale": 0.25
+}

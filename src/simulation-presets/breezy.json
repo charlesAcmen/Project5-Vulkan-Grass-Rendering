@@ -1,0 +1,18 @@
+{
+  "id": "breezy",
+  "label": "Breezy",
+  "description": "Default: visibly active grass with moderate, slow-moving gusts.",
+  "wind_direction": [1.0, 0.0, 0.35],
+  "wind_field_scale": 1.70,
+  "primary_amplitude": 0.70,
+  "secondary_amplitude": 0.35,
+  "primary_angular_speed": 0.85,
+  "secondary_angular_speed": 0.35,
+  "primary_x_wave_number": 0.35,
+  "primary_z_wave_number": 0.20,
+  "secondary_x_wave_number": 0.60,
+  "gravity_direction": [0.0, -1.0, 0.0],
+  "gravity_pull_rate": 0.90,
+  "recovery_rate_scale": 0.95,
+  "front_gravity_scale": 0.25
+}

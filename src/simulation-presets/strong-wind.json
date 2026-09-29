@@ -1,0 +1,18 @@
+{
+  "id": "strong-wind",
+  "label": "Strong wind",
+  "description": "Large but still readable gusts for interaction tests.",
+  "wind_direction": [1.0, 0.0, 0.35],
+  "wind_field_scale": 3.50,
+  "primary_amplitude": 1.00,
+  "secondary_amplitude": 0.55,
+  "primary_angular_speed": 1.20,
+  "secondary_angular_speed": 0.55,
+  "primary_x_wave_number": 0.55,
+  "primary_z_wave_number": 0.30,
+  "secondary_x_wave_number": 0.90,
+  "gravity_direction": [0.0, -1.0, 0.0],
+  "gravity_pull_rate": 0.90,
+  "recovery_rate_scale": 0.90,
+  "front_gravity_scale": 0.25
+}

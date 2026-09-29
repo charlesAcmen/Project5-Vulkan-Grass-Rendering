@@ -1,0 +1,18 @@
+{
+  "id": "stress-test",
+  "label": "Stress test",
+  "description": "High-force gust values that visibly drive grass close to the ground.",
+  "wind_direction": [1.0, 0.0, 0.35],
+  "wind_field_scale": 16.00,
+  "primary_amplitude": 2.50,
+  "secondary_amplitude": 1.50,
+  "primary_angular_speed": 4.00,
+  "secondary_angular_speed": 1.50,
+  "primary_x_wave_number": 0.70,
+  "primary_z_wave_number": 0.45,
+  "secondary_x_wave_number": 1.10,
+  "gravity_direction": [0.0, -1.0, 0.0],
+  "gravity_pull_rate": 0.90,
+  "recovery_rate_scale": 0.85,
+  "front_gravity_scale": 0.25
+}

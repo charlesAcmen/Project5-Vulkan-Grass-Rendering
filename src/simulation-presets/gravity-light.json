@@ -1,0 +1,7 @@
+{
+  "id": "gravity-light",
+  "label": "Light",
+  "description": "Apply a light gravity pull while preserving the chosen direction.",
+  "gravity_pull_rate": 0.45,
+  "front_gravity_scale": 0.25
+}

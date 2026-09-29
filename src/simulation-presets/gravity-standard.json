@@ -1,0 +1,7 @@
+{
+  "id": "gravity-standard",
+  "label": "Standard",
+  "description": "Apply the default gravity pull while preserving the chosen direction.",
+  "gravity_pull_rate": 0.90,
+  "front_gravity_scale": 0.25
+}

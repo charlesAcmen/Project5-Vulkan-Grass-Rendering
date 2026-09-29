@@ -1,0 +1,7 @@
+{
+  "id": "gravity-heavy",
+  "label": "Heavy",
+  "description": "Apply a stronger gravity pull while preserving the chosen direction.",
+  "gravity_pull_rate": 1.80,
+  "front_gravity_scale": 0.25
+}

@@ -52,8 +52,8 @@ namespace {
         glm::vec3 axis = glm::cross(from, to);
 
         if (cosine < -0.9999f) {
-            // Choose a stable axis when the two trackball positions oppose one
-            // another and their cross product is therefore close to zero.
+            // A 180-degree rotation has no cross-product axis. Select a stable
+            // perpendicular axis so an exact opposite drag remains valid.
             axis = glm::cross(from, std::abs(from.x) < 0.9f ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f));
             return glm::angleAxis(glm::pi<float>(), glm::normalize(axis)) * value;
         }

@@ -457,6 +457,10 @@ const SimulationPreset& SimulationPresetLibrary::GetDefaultSimulationPreset() co
     throw std::runtime_error("Simulation preset package is missing the breezy default preset");
 }
 
+const GrassFieldConfig& SimulationPresetLibrary::GetGrassFieldConfig() const {
+    return grassFieldConfig;
+}
+
 void SimulationPresetLibrary::ApplySimulationPreset(const SimulationPreset& preset, SimulationParameters& parameters) const {
     const float deltaSeconds = parameters.timeAndDeformationScales.x;
     const float elapsedSeconds = parameters.timeAndDeformationScales.y;

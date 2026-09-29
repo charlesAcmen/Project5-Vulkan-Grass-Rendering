@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 
 #include <array>
+#include <cstddef>
+#include <type_traits>
 
 struct Vertex {
     glm::vec3 pos;
@@ -45,3 +47,12 @@ struct Vertex {
         return attributeDescriptions;
     }
 };
+
+// This vertex record is copied directly into a Vulkan vertex buffer. Keep its
+// CPU byte layout aligned with the three formats declared above and the
+// location-0/1/2 inputs in graphics.vert.
+static_assert(std::is_standard_layout_v<Vertex>, "Vertex must have a stable byte layout");
+static_assert(sizeof(Vertex) == 32, "Vertex must contain two vec3 values and one vec2 value");
+static_assert(offsetof(Vertex, pos) == 0, "Unexpected Vertex::pos offset");
+static_assert(offsetof(Vertex, color) == 12, "Unexpected Vertex::color offset");
+static_assert(offsetof(Vertex, texCoord) == 24, "Unexpected Vertex::texCoord offset");

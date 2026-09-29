@@ -4,20 +4,40 @@
 
 #include "scene/Camera.h"
 #include "simulation/SimulationParameters.h"
+#include "simulation/SimulationPresetLibrary.h"
 
-// Owns the immediate-mode controls for the grass simulation, including the
-// camera-relative 3D wind-direction trackball. It has no Vulkan resources;
+// Owns the immediate-mode controls for the grass simulation, including
+// camera-relative 3D direction trackballs. It has no Vulkan resources;
 // ImGuiVulkanLayer owns the backend and renderer integration.
 class SimulationPanel {
 public:
+    explicit SimulationPanel(const SimulationPresetLibrary& presetLibrary);
+
     void Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame);
 
 private:
-    bool hasLastValidWindDirection = false;
-    glm::vec3 lastValidWindDirection = glm::vec3(1.0f, 0.0f, 0.35f);
+    struct DirectionTrackballState {
+        bool hasLastValidDirection = false;
+        glm::vec3 lastValidDirection = glm::vec3(0.0f);
 
-    bool isDraggingWindDirection = false;
-    glm::vec3 dragStartTrackball = glm::vec3(0.0f, 0.0f, 1.0f);
-    glm::vec3 dragStartWindDirection = glm::vec3(1.0f, 0.0f, 0.35f);
-    CameraFrame dragStartCameraFrame = {};
+        bool isDragging = false;
+        glm::vec3 dragStartTrackball = glm::vec3(0.0f, 0.0f, 1.0f);
+        glm::vec3 dragStartDirection = glm::vec3(0.0f);
+        CameraFrame dragStartCameraFrame = {};
+    };
+
+    void DrawDirectionControl(
+        const char* controlId,
+        const char* title,
+        const char* primaryLabel,
+        unsigned int primaryColor,
+        const glm::vec3& fallbackDirection,
+        DirectionTrackballState& state,
+        glm::vec3& direction,
+        const CameraFrame& cameraFrame
+    );
+
+    const SimulationPresetLibrary& presetLibrary;
+    DirectionTrackballState windDirectionState;
+    DirectionTrackballState gravityDirectionState;
 };

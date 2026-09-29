@@ -43,7 +43,10 @@ file(GLOB IMAGES
 
 # Presets are intentionally ordinary data files rather than generated C++.
 # Copy them beside every executable so Debug and Release load the same controls.
-file(GLOB SIMULATION_PRESET_FILES
+# CONFIGURE_DEPENDS makes CMake regenerate the deployment list when a new JSON
+# file is added. Without it, an ordinary incremental build can compile code
+# that requires a new preset while leaving that preset absent beside the EXE.
+file(GLOB SIMULATION_PRESET_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation-presets/*.json
 )
 

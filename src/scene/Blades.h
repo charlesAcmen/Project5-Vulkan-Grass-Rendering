@@ -6,8 +6,8 @@
 #include <type_traits>
 #include "Model.h"
 
-// The default scene keeps the original 8,192-blade workload. Individual
-// Blade groups now own their count so benchmark scenes can scale safely.
+// Historical single-field workload retained as a useful density reference.
+// Startup scene configuration now supplies each patch's actual blade count.
 constexpr static uint32_t DEFAULT_BLADE_COUNT = 1 << 13;
 constexpr static float MIN_HEIGHT = 1.3f;
 constexpr static float MAX_HEIGHT = 2.5f;

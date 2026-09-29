@@ -76,8 +76,12 @@ namespace {
         return ImVec2(localDirection.x, -localDirection.y);
     }
 
-    void DrawProjectedArrow(ImDrawList* drawList, const ImVec2& origin, const ImVec2& projectedDirection, float scale, ImU32 color, float thickness, const char* label) {
-        const float directionLength = std::sqrt(projectedDirection.x * projectedDirection.x + projectedDirection.y * projectedDirection.y);
+    void DrawProjectedArrow(
+        ImDrawList* drawList, const ImVec2& origin, 
+        const ImVec2& projectedDirection, float scale, 
+        ImU32 color, float thickness, const char* label) {
+        const float directionLength = 
+            std::sqrt(projectedDirection.x * projectedDirection.x + projectedDirection.y * projectedDirection.y);
         if (directionLength < 0.001f) {
             drawList->AddCircleFilled(origin, 4.0f, color);
             return;
@@ -117,7 +121,12 @@ SimulationPanel::SimulationPanel(const SimulationPresetLibrary& presetLibrary)
     gravityDirectionState.lastValidDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 }
 
-void SimulationPanel::DrawDirectionControl(const char* controlId, const char* title, const char* primaryLabel, unsigned int primaryColor, const glm::vec3& fallbackDirection, DirectionTrackballState& state, glm::vec3& direction, const CameraFrame& cameraFrame) {
+void SimulationPanel::DrawDirectionControl(
+    const char* controlId, const char* title, 
+    const char* primaryLabel, unsigned int primaryColor, 
+    const glm::vec3& fallbackDirection, 
+    DirectionTrackballState& state, glm::vec3& direction, 
+    const CameraFrame& cameraFrame) {
     const glm::vec3 configuredDirection = NormalizeOrFallback(direction, fallbackDirection);
     if (!state.hasLastValidDirection || (!state.isDragging && glm::dot(configuredDirection, state.lastValidDirection) < 0.99999f)) {
         state.lastValidDirection = configuredDirection;

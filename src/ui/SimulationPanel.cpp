@@ -12,7 +12,11 @@ namespace {
 
     glm::vec3 NormalizeOrFallback(const glm::vec3& value, const glm::vec3& fallback) {
         const float valueLength = glm::length(value);
-        return valueLength > kDirectionEpsilon ? value / valueLength : fallback;
+        return valueLength > kDirectionEpsilon ? value / valueLength;
+        }
+
+        const float fallbackLength = glm::length(fallback);
+        return fallbackLength > kDirectionEpsilon ? fallback / fallback;
     }
 
     glm::vec3 ToCameraLocal(const glm::vec3& worldDirection, const CameraFrame& frame) {

@@ -25,6 +25,17 @@ VkBuffer Camera::GetBuffer() const {
     return buffer;
 }
 
+CameraFrame Camera::GetFrame() const {
+    // inverse(view) maps camera-space basis vectors into world space. Camera
+    // forward is -Z in Vulkan/OpenGL-style view coordinates.
+    const glm::mat4 cameraToWorld = glm::inverse(cameraBufferObject.viewMatrix);
+    CameraFrame frame = {};
+    frame.right = glm::normalize(glm::vec3(cameraToWorld[0]));
+    frame.up = glm::normalize(glm::vec3(cameraToWorld[1]));
+    frame.forward = glm::normalize(-glm::vec3(cameraToWorld[2]));
+    return frame;
+}
+
 void Camera::UpdateAspectRatio(float aspectRatio) {
     cameraBufferObject.projectionMatrix = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
     cameraBufferObject.projectionMatrix[1][1] *= -1; // y-coordinate is flipped

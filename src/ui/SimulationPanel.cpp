@@ -70,9 +70,8 @@ namespace {
         return ImVec2(value.x * scalar, value.y * scalar);
     }
 
-    // This is an ordinary orthographic projection of camera-local XYZ onto the
-    // gizmo plane. Arrow lengths therefore change only when a 3D axis points
-    // toward or away from the camera; the UI does not artificially rescale it.
+    // Orthographically project camera-local XYZ. A projected arrow becomes
+    // short only when its real 3D direction points toward/away from camera.
     ImVec2 ProjectCameraLocal(const glm::vec3& localDirection) {
         return ImVec2(localDirection.x, -localDirection.y);
     }

@@ -47,6 +47,11 @@ namespace {
     }
 
     void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition) {
+        renderer->OnCursorPosition(window, xPosition, yPosition);
+        if (renderer->WantsMouseCapture()) {
+            return;
+        }
+
         if (leftMouseDown) {
             double sensitivity = 0.5;
             float deltaX = static_cast<float>((previousX - xPosition) * sensitivity);

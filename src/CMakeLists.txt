@@ -27,6 +27,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/render/Renderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/render/Renderer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationParameters.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationPresetLibrary.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationPresetLibrary.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ImGuiVulkanLayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ImGuiVulkanLayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/SimulationPanel.cpp
@@ -37,6 +39,12 @@ file(GLOB IMAGES
     ${CMAKE_CURRENT_SOURCE_DIR}/images/*.jpg
     ${CMAKE_CURRENT_SOURCE_DIR}/images/*.png
     ${CMAKE_CURRENT_SOURCE_DIR}/images/*.bmp
+)
+
+# Presets are intentionally ordinary data files rather than generated C++.
+# Copy them beside every executable so Debug and Release load the same controls.
+file(GLOB SIMULATION_PRESET_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulation-presets/*.json
 )
 
 file(GLOB_RECURSE SHADER_SOURCES
@@ -123,6 +131,16 @@ foreach(IMAGE ${IMAGES})
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${IMAGE}
             "$<TARGET_FILE_DIR:vulkan_grass_rendering>/images/${fname}"
+    )
+endforeach()
+
+foreach(PRESET_FILE ${SIMULATION_PRESET_FILES})
+    get_filename_component(fname ${PRESET_FILE} NAME)
+    add_custom_command(TARGET vulkan_grass_rendering POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vulkan_grass_rendering>/simulation-presets"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PRESET_FILE}
+            "$<TARGET_FILE_DIR:vulkan_grass_rendering>/simulation-presets/${fname}"
     )
 endforeach()
 

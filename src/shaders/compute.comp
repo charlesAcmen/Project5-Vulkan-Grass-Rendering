@@ -9,9 +9,12 @@ layout(set = 0, binding = 0) uniform CameraBufferObject {
     mat4 proj;
 } camera;
 
-layout(set = 1, binding = 0) uniform Time {
-    float deltaTime;
-    float totalTime;
+layout(set = 1, binding = 0) uniform SimulationParameters {
+    vec4 timeAndDeformationScales;
+    vec4 windDirectionAndFieldScale;
+    vec4 windAmplitudesAndAngularSpeeds;
+    vec4 windWaveNumbers;
+    vec4 gravityDirectionAndPullRate;
 };
 
 struct Blade {

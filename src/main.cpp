@@ -7,6 +7,7 @@
 #include "render/Renderer.h"
 #include "scene/Camera.h"
 #include "scene/Scene.h"
+#include "simulation/SimulationPresetLibrary.h"
 #include "Image.h"
 
 Device* device;

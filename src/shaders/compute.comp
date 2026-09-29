@@ -28,6 +28,9 @@ struct Blade {
 // 1. Store the input blades
 // 2. Write out the culled blades
 // 3. Write the total number of blades remaining
+layout(std430, set = 2, binding = 0) buffer SourceBlades {
+    Blade blades[];
+} sourceBlades;
 
 // The project is using vkCmdDrawIndirect to use a buffer as the arguments for a draw call
 // This is sort of an advanced feature so we've showed you what this buffer should look like

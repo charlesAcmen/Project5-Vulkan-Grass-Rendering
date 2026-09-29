@@ -36,6 +36,30 @@ else(WIN32)
     target_link_libraries(vulkan_grass_rendering ${CMAKE_THREAD_LIBS_INIT})
 endif(WIN32)
 
+# Use the official Dear ImGui v1.92.9 sources and GLFW/Vulkan backends. The
+# checked-in snapshot is pinned at 01380c579715e62fb9a8d6ec0502c4ea83bfde6e,
+# with one documented GLFW 3.3.0 DPI compatibility guard in its GLFW backend,
+# so Debug and Release builds do not depend on network access.
+set(IMGUI_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../external/imgui)
+if(NOT EXISTS ${IMGUI_SOURCE_DIR}/imgui.cpp)
+    message(FATAL_ERROR "Dear ImGui v1.92.9 is missing from external/imgui.")
+endif()
+
+add_library(project_dear_imgui STATIC
+    ${IMGUI_SOURCE_DIR}/imgui.cpp
+    ${IMGUI_SOURCE_DIR}/imgui_demo.cpp
+    ${IMGUI_SOURCE_DIR}/imgui_draw.cpp
+    ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
+    ${IMGUI_SOURCE_DIR}/imgui_widgets.cpp
+    ${IMGUI_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${IMGUI_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+)
+target_include_directories(project_dear_imgui PUBLIC
+    ${IMGUI_SOURCE_DIR}
+    ${IMGUI_SOURCE_DIR}/backends
+)
+target_link_libraries(project_dear_imgui PUBLIC Vulkan::Vulkan glfw)
+
 set(SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
 
 foreach(SHADER_SOURCE ${SHADER_SOURCES})
@@ -69,7 +93,7 @@ foreach(IMAGE ${IMAGES})
     )
 endforeach()
 
-target_link_libraries(vulkan_grass_rendering ${ASSIMP_LIBRARIES} Vulkan::Vulkan glfw)
+target_link_libraries(vulkan_grass_rendering ${ASSIMP_LIBRARIES} Vulkan::Vulkan glfw project_dear_imgui)
 target_include_directories(vulkan_grass_rendering PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${GLM_INCLUDE_DIR}

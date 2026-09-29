@@ -54,6 +54,78 @@ void main() {
 	barrier(); // Wait till all threads reach this point
 
     // TODO: Apply forces on every blade and update the vertices in the buffer
+    uint bladeIndex = gl_GlobalInvocationID.x;
+    if (bladeIndex >= sourceBlades.blades.length()) {
+        return;
+    }
+
+    Blade blade = sourceBlades.blades[bladeIndex];
+    vec3 root = blade.v0.xyz;
+    vec3 up = normalize(blade.up.xyz);
+    float height = blade.v1.w;
+    float bladeRecoveryRate = blade.up.w;
+
+    // The paper applies natural forces directly as a frame-rate-independent
+    // displacement. Clamp long frames so a paused window cannot destabilize a blade.
+    float simulationDeltaSeconds = clamp(simulation.timeAndDeformationScales.x, 0.0, 1.0 / 30.0);
+    vec3 restTip = root + up * height;
+    vec3 recoveryDisplacementRate = (restTip - blade.v2.xyz) * bladeRecoveryRate * simulation.timeAndDeformationScales.z;
+
+    vec3 configuredGravityDirection = simulation.gravityDirectionAndPullRate.xyz;
+    float configuredGravityPullRate = max(simulation.gravityDirectionAndPullRate.w, 0.0);
+    float gravityDirectionLength = length(configuredGravityDirection);
+    vec3 gravityPullRate = gravityDirectionLength > 0.0001
+        ? configuredGravityDirection / gravityDirectionLength * configuredGravityPullRate
+        : vec3(0.0);
+    vec3 bladeFacingDirection = normalize(vec3(cos(blade.v0.w), 0.0, sin(blade.v0.w)));
+    vec3 bladeFacingBendRate = simulation.timeAndDeformationScales.w * length(gravityPullRate) * bladeFacingDirection;
+    vec3 gravityAndFacingBendRate = gravityPullRate + bladeFacingBendRate;
+
+    vec3 rootToTip = blade.v2.xyz - root;
+    float tipDistance = max(length(rootToTip), 0.0001);
+    float uprightHeightRatio = clamp(dot(rootToTip, up) / height, 0.0, 1.0);
+
+    // Primary and secondary gusts are the two wind-field contributors. Their
+    // positive envelopes are added together, so neither can subtract the
+    // other. When both gust amplitudes are zero, the wind force is zero;
+    // windDirectionAndFieldScale.w only scales their combined result.
+    float primaryPhase = sin(dot(root.xz, simulation.windWaveNumbers.xy) - simulation.timeAndDeformationScales.y * simulation.windAmplitudesAndAngularSpeeds.z);
+    float secondaryPhase = sin(root.x * simulation.windWaveNumbers.z + simulation.timeAndDeformationScales.y * simulation.windAmplitudesAndAngularSpeeds.w);
+    float primaryWindContribution = max(simulation.windAmplitudesAndAngularSpeeds.x, 0.0) * 0.5 * (primaryPhase + 1.0);
+    float secondaryWindContribution = max(simulation.windAmplitudesAndAngularSpeeds.y, 0.0) * 0.5 * (secondaryPhase + 1.0);
+    float windDisplacementRate = max(simulation.windDirectionAndFieldScale.w, 0.0)
+        * (primaryWindContribution + secondaryWindContribution);
+    vec3 configuredWindDirection = simulation.windDirectionAndFieldScale.xyz;
+    float windDirectionLength = length(configuredWindDirection);
+    vec3 windBendRate = vec3(0.0);
+    if (windDisplacementRate > 0.0001 && windDirectionLength > 0.0001) {
+        vec3 windDisplacementRateVector = configuredWindDirection / windDirectionLength * windDisplacementRate;
+        float crossWindAlignment = 1.0 - abs(dot(normalize(windDisplacementRateVector), rootToTip / tipDistance));
+        windBendRate = windDisplacementRateVector * crossWindAlignment * uprightHeightRatio;
+    }
+
+    vec3 tip = blade.v2.xyz + (gravityAndFacingBendRate + recoveryDisplacementRate + windBendRate) * simulationDeltaSeconds;
+
+    // State validation follows Section 5.2 of the paper: keep the tip above
+    // the local ground, derive v1 from lateral displacement, then preserve length.
+    tip -= up * min(dot(up, tip - root), 0.0);
+
+    vec3 rootToCandidateTip = tip - root;
+    vec3 groundProjection = rootToCandidateTip - up * dot(rootToCandidateTip, up);
+    float projectedRatio = length(groundProjection) / height;
+    float guideHeightFactor = max(1.0 - projectedRatio, 0.05 * max(projectedRatio, 1.0));
+    vec3 guide = root + height * up * guideHeightFactor;
+
+    float chordLength = length(tip - root);
+    float controlPolygonLength = length(guide - root) + length(tip - guide);
+    float curveLength = max((2.0 * chordLength + controlPolygonLength) / 3.0, 0.0001);
+    float lengthRatio = height / curveLength;
+    vec3 correctedGuide = root + lengthRatio * (guide - root);
+    vec3 correctedTip = correctedGuide + lengthRatio * (tip - guide);
+
+    blade.v1.xyz = correctedGuide;
+    blade.v2.xyz = correctedTip;
+    sourceBlades.blades[bladeIndex] = blade;
 
 	// TODO: Cull blades that are too far away or not in the camera frustum and write them
 	// to the culled blades buffer

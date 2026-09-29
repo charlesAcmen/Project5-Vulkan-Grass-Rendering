@@ -9,7 +9,7 @@
 // layouts advance in identical 16-byte steps without vec3 padding surprises.
 struct alignas(16) SimulationParameters {
     // x = delta seconds, y = elapsed seconds, z = recovery-rate scale,
-    // w = blade-facing bend scale.
+    // w = front-gravity bend scale.
     glm::vec4 timeAndDeformationScales;
 
     // xyz = world-space wind direction, w = total wind-field scale.
@@ -31,7 +31,7 @@ struct alignas(16) SimulationParameters {
     SimulationParameters()
         // This visual-natural preset assumes the existing scene-unit scale. It
         // is not a calibrated real-world grass/material configuration.
-        : timeAndDeformationScales(0.0f, 0.0f, 1.0f, 0.30f),
+        : timeAndDeformationScales(0.0f, 0.0f, 1.0f, 0.25f),
           windDirectionAndFieldScale(1.0f, 0.0f, 0.35f, 1.0f),
           // The two gust envelopes are added. Setting both amplitudes to zero
           // deliberately removes wind, while the final component scales them.

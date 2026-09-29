@@ -227,6 +227,17 @@ namespace {
         return static_cast<float>(value.number);
     }
 
+    uint32_t RequireUnsignedInteger(const JsonValue& object, const char* name, bool allowZero = false) {
+        const JsonValue& value = RequireMember(object, name);
+        const double number = value.number;
+        if (value.type != JsonValue::Type::Number || !std::isfinite(number)
+            || std::floor(number) != number || number < (allowZero ? 0.0 : 1.0)
+            || number > static_cast<double>(std::numeric_limits<uint32_t>::max())) {
+            throw std::runtime_error(std::string("Preset field must be a valid unsigned integer: ") + name);
+        }
+        return static_cast<uint32_t>(number);
+    }
+
     std::string RequireString(const JsonValue& object, const char* name) {
         const JsonValue& value = RequireMember(object, name);
         if (value.type != JsonValue::Type::String) {
@@ -331,6 +342,67 @@ namespace {
         preset.frontGravityScale = RequireNumber(root, "front_gravity_scale");
         return preset;
     }
+
+    GrassFieldConfig ParseGrassFieldConfig(const std::string& path) {
+        const JsonValue root = ReadJsonFile(path);
+        GrassFieldConfig config;
+
+        config.patchSizeUnits = RequireNumber(root, "patch_size_units");
+        if (!std::isfinite(config.patchSizeUnits) || config.patchSizeUnits <= 0.0f) {
+            throw std::runtime_error("Grass field patch_size_units must be finite and greater than zero");
+        }
+
+        config.rows = RequireUnsignedInteger(root, "rows");
+        config.columns = RequireUnsignedInteger(root, "columns");
+        config.activePatchCount = RequireUnsignedInteger(root, "active_patch_count");
+        config.randomSeed = RequireUnsignedInteger(root, "random_seed", true);
+
+        const JsonValue& matrix = RequireMember(root, "patch_blade_counts");
+        if (matrix.type != JsonValue::Type::Array || matrix.array.size() != config.rows) {
+            throw std::runtime_error("Grass field patch_blade_counts row count must match rows");
+        }
+
+        uint32_t countedActivePatches = 0;
+        uint64_t totalBladeCount = 0;
+        config.patchBladeCounts.reserve(config.rows);
+        for (uint32_t row = 0; row < config.rows; ++row) {
+            const JsonValue& jsonRow = matrix.array[row];
+            if (jsonRow.type != JsonValue::Type::Array || jsonRow.array.size() != config.columns) {
+                throw std::runtime_error("Grass field patch_blade_counts[" + std::to_string(row)
+                    + "] column count must match columns");
+            }
+
+            std::vector<uint32_t> bladeCounts;
+            bladeCounts.reserve(config.columns);
+            for (uint32_t column = 0; column < config.columns; ++column) {
+                const JsonValue& cell = jsonRow.array[column];
+                const double number = cell.number;
+                if (cell.type != JsonValue::Type::Number || !std::isfinite(number)
+                    || std::floor(number) != number || number < 0.0
+                    || number > static_cast<double>(std::numeric_limits<uint32_t>::max())) {
+                    throw std::runtime_error("Grass field patch_blade_counts[" + std::to_string(row)
+                        + "][" + std::to_string(column) + "] must be an unsigned integer");
+                }
+
+                const uint32_t bladeCount = static_cast<uint32_t>(number);
+                if (bladeCount > 0) {
+                    ++countedActivePatches;
+                    if (totalBladeCount > std::numeric_limits<uint64_t>::max() - bladeCount) {
+                        throw std::runtime_error("Grass field total blade count overflows uint64_t");
+                    }
+                    totalBladeCount += bladeCount;
+                }
+                bladeCounts.push_back(bladeCount);
+            }
+            config.patchBladeCounts.push_back(bladeCounts);
+        }
+
+        if (countedActivePatches != config.activePatchCount) {
+            throw std::runtime_error("Grass field active_patch_count does not match the number of non-zero matrix cells");
+        }
+        config.totalBladeCount = totalBladeCount;
+        return config;
+    }
 }
 
 SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {
@@ -339,6 +411,7 @@ SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {
     const JsonValue& rangesRoot = RequireMember(rangeRoot, "ranges");
 
     SimulationPresetLibrary library;
+    library.grassFieldConfig = ParseGrassFieldConfig(JoinPath(presetDirectory, "grass-field.json"));
     library.ranges.windFieldScale = RequireRange(rangesRoot, "wind_field_scale");
     library.ranges.primaryAmplitude = RequireRange(rangesRoot, "primary_amplitude");
     library.ranges.secondaryAmplitude = RequireRange(rangesRoot, "secondary_amplitude");

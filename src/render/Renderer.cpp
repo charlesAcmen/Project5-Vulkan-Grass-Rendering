@@ -9,7 +9,7 @@
 
 static constexpr unsigned int WORKGROUP_SIZE = 32;
 
-Renderer::Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* camera)
+Renderer::Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* camera, const SimulationPresetLibrary& presetLibrary)
   : device(device),
     logicalDevice(device->GetVkDevice()),
     swapChain(swapChain),
@@ -35,7 +35,7 @@ Renderer::Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* c
     CreateGrassPipeline();
     CreateComputePipeline();
 #ifndef NDEBUG
-    uiLayer = new ImGuiVulkanLayer(device, swapChain, renderPass, GetGLFWWindow());
+    uiLayer = new ImGuiVulkanLayer(device, swapChain, renderPass, GetGLFWWindow(), presetLibrary);
 #endif
     RecordCommandBuffers();
     RecordComputeCommandBuffer();

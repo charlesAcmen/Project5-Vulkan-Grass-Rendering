@@ -4,12 +4,13 @@
 #include "SwapChain.h"
 #include "scene/Scene.h"
 #include "scene/Camera.h"
+#include "simulation/SimulationPresetLibrary.h"
 #include "ui/ImGuiVulkanLayer.h"
 
 class Renderer {
 public:
     Renderer() = delete;
-    Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* camera);
+    Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* camera, const SimulationPresetLibrary& presetLibrary);
     ~Renderer();
 
     void CreateCommandPools();

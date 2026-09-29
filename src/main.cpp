@@ -161,7 +161,7 @@ int RunApplication() {
     );
     plane->SetTexture(grassImage);
     
-    Blades* blades = new Blades(device, transferCommandPool, planeDim);
+    Blades* blades = new Blades(device, transferCommandPool, planeDim, DEFAULT_BLADE_COUNT);
 
     vkDestroyCommandPool(device->GetVkDevice(), transferCommandPool, nullptr);
 

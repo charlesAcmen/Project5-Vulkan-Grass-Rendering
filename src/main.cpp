@@ -4,9 +4,9 @@
 #include <exception>
 #include "Instance.h"
 #include "Window.h"
-#include "Renderer.h"
-#include "Camera.h"
-#include "Scene.h"
+#include "render/Renderer.h"
+#include "scene/Camera.h"
+#include "scene/Scene.h"
 #include "Image.h"
 
 Device* device;
@@ -27,6 +27,15 @@ namespace {
     double previousY = 0.0;
 
     void mouseDownCallback(GLFWwindow* window, int button, int action, int mods) {
+        renderer->OnMouseButton(window, button, action, mods);
+        if (renderer->WantsMouseCapture()) {
+            // A UI click must also stop an earlier camera drag from leaking
+            // into the panel interaction.
+            leftMouseDown = false;
+            rightMouseDown = false;
+            return;
+        }
+
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
             if (action == GLFW_PRESS) {
                 leftMouseDown = true;

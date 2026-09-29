@@ -13,7 +13,7 @@ class SwapChain;
 // owned by their existing systems.
 class ImGuiVulkanLayer {
 public:
-    ImGuiVulkanLayer(Device* device, SwapChain* swapChain, VkRenderPass renderPass, GLFWwindow* window);
+    ImGuiVulkanLayer(Device* device, SwapChain* swapChain, VkRenderPass renderPass, GLFWwindow* window, const SimulationPresetLibrary& presetLibrary);
     ~ImGuiVulkanLayer();
 
     void PrepareFrame(SimulationParameters& parameters, const CameraFrame& cameraFrame);

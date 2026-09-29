@@ -23,7 +23,8 @@ namespace {
     }
 }
 
-ImGuiVulkanLayer::ImGuiVulkanLayer(Device* device, SwapChain* swapChain, VkRenderPass renderPass, GLFWwindow* window) {
+ImGuiVulkanLayer::ImGuiVulkanLayer(Device* device, SwapChain* swapChain, VkRenderPass renderPass, GLFWwindow* window, const SimulationPresetLibrary& presetLibrary)
+  : simulationPanel(presetLibrary) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();

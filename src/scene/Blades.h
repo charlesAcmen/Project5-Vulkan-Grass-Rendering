@@ -2,24 +2,28 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 #include <array>
+#include <cstddef>
+#include <type_traits>
 #include "Model.h"
 
-constexpr static unsigned int NUM_BLADES = 1 << 13;
+// The default scene keeps the original 8,192-blade workload. Individual
+// Blade groups now own their count so benchmark scenes can scale safely.
+constexpr static uint32_t DEFAULT_BLADE_COUNT = 1 << 13;
 constexpr static float MIN_HEIGHT = 1.3f;
 constexpr static float MAX_HEIGHT = 2.5f;
 constexpr static float MIN_WIDTH = 0.1f;
 constexpr static float MAX_WIDTH = 0.14f;
-constexpr static float MIN_BEND = 7.0f;
-constexpr static float MAX_BEND = 13.0f;
-
-struct Blade {
+constexpr static float MIN_RECOVERY_RATE = 7.0f;
+constexpr static float MAX_RECOVERY_RATE = 13.0f;
+//add alignment
+struct alignas(16) Blade {
     // Position and direction
     glm::vec4 v0;
     // Bezier point and height
     glm::vec4 v1;
     // Physical model guide and width
     glm::vec4 v2;
-    // Up vector and stiffness coefficient
+    // Up vector and per-blade recovery rate
     glm::vec4 up;
 
     static VkVertexInputBindingDescription getBindingDescription() {
@@ -62,6 +66,17 @@ struct Blade {
     }
 };
 
+// Blade is simultaneously a CPU-generated record, a std430 compute SSBO
+// element, and a four-attribute grass vertex record. Preserve all four vec4
+// offsets so those three consumers keep interpreting the same bytes.
+static_assert(std::is_standard_layout_v<Blade>, "Blade must have a stable byte layout");
+static_assert(sizeof(glm::vec4) == 16, "Blade ABI assumes 16-byte glm::vec4 values");
+static_assert(sizeof(Blade) == 4 * sizeof(glm::vec4), "Blade must occupy four vec4 slots");
+static_assert(offsetof(Blade, v0) == 0, "Unexpected Blade::v0 offset");
+static_assert(offsetof(Blade, v1) == 16, "Unexpected Blade::v1 offset");
+static_assert(offsetof(Blade, v2) == 32, "Unexpected Blade::v2 offset");
+static_assert(offsetof(Blade, up) == 48, "Unexpected Blade::up offset");
+
 struct BladeDrawIndirect {
     uint32_t vertexCount;
     uint32_t instanceCount;
@@ -69,8 +84,19 @@ struct BladeDrawIndirect {
     uint32_t firstInstance;
 };
 
+// Phase 3 writes this record from compute and passes its bytes to
+// vkCmdDrawIndirect. It must remain ABI-compatible with Vulkan's command type.
+static_assert(std::is_standard_layout_v<BladeDrawIndirect>, "Indirect command must have a stable byte layout");
+static_assert(sizeof(BladeDrawIndirect) == sizeof(VkDrawIndirectCommand), "Indirect command size must match Vulkan");
+static_assert(offsetof(BladeDrawIndirect, vertexCount) == offsetof(VkDrawIndirectCommand, vertexCount), "Unexpected indirect vertexCount offset");
+static_assert(offsetof(BladeDrawIndirect, instanceCount) == offsetof(VkDrawIndirectCommand, instanceCount), "Unexpected indirect instanceCount offset");
+static_assert(offsetof(BladeDrawIndirect, firstVertex) == offsetof(VkDrawIndirectCommand, firstVertex), "Unexpected indirect firstVertex offset");
+static_assert(offsetof(BladeDrawIndirect, firstInstance) == offsetof(VkDrawIndirectCommand, firstInstance), "Unexpected indirect firstInstance offset");
+
 class Blades : public Model {
 private:
+    uint32_t bladeCount;
+
     VkBuffer sourceBladesBuffer;
     VkBuffer visibleBladesBuffer;
     VkBuffer indirectDrawBuffer;
@@ -80,7 +106,8 @@ private:
     VkDeviceMemory indirectDrawBufferMemory;
 
 public:
-    Blades(Device* device, VkCommandPool commandPool, float planeDim);
+    Blades(Device* device, VkCommandPool commandPool, float planeDim, uint32_t bladeCount);
+    uint32_t GetBladeCount() const;
     VkBuffer GetSourceBladesBuffer() const;
     VkBuffer GetVisibleBladesBuffer() const;
     VkBuffer GetIndirectDrawBuffer() const;

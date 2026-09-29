@@ -65,7 +65,9 @@ namespace {
         if (leftMouseDown) {
             double sensitivity = 0.5;
             float deltaX = static_cast<float>((previousX - xPosition) * sensitivity);
-            float deltaY = static_cast<float>((previousY - yPosition) * sensitivity);
+            // Screen-space Y grows downward. Keep the original orbit-control
+            // convention: dragging downward pitches the view toward the sky.
+            float deltaY = static_cast<float>((yPosition - previousY) * sensitivity);
 
             camera->UpdateOrbit(deltaX, deltaY, 0.0f);
 

@@ -78,8 +78,11 @@ void main() {
         ? configuredGravityDirection / gravityDirectionLength * configuredGravityPullRate
         : vec3(0.0);
     vec3 bladeFacingDirection = normalize(vec3(cos(blade.v0.w), 0.0, sin(blade.v0.w)));
-    vec3 bladeFacingBendRate = simulation.timeAndDeformationScales.w * length(gravityPullRate) * bladeFacingDirection;
-    vec3 gravityAndFacingBendRate = gravityPullRate + bladeFacingBendRate;
+    // The default front-gravity scale is 1/4, matching the milestone's
+    // g = gE + (1/4 * |gE| * frontDirection) visual bend model.
+    float frontGravityScale = simulation.timeAndDeformationScales.w;
+    vec3 frontGravityBendRate = frontGravityScale * length(gravityPullRate) * bladeFacingDirection;
+    vec3 gravityAndFacingBendRate = gravityPullRate + frontGravityBendRate;
 
     vec3 rootToTip = blade.v2.xyz - root;
     float tipDistance = max(length(rootToTip), 0.0001);

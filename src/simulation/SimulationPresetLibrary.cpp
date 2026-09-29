@@ -1,8 +1,10 @@
 #include "SimulationPresetLibrary.h"
 
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stdexcept>

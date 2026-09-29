@@ -38,11 +38,9 @@ namespace {
         float x = (mousePosition.x - center.x) / radius;
         float y = -(mousePosition.y - center.y) / radius;
         const float distanceSquared = x * x + y * y;
-
         if (distanceSquared <= 1.0f) {
             return glm::vec3(x, y, std::sqrt(1.0f - distanceSquared));
         }
-
         const float inverseDistance = 1.0f / std::sqrt(distanceSquared);
         return glm::vec3(x * inverseDistance, y * inverseDistance, 0.0f);
     }
@@ -50,14 +48,12 @@ namespace {
     glm::vec3 RotateByArcball(const glm::vec3& value, const glm::vec3& from, const glm::vec3& to) {
         const float cosine = glm::clamp(glm::dot(from, to), -1.0f, 1.0f);
         glm::vec3 axis = glm::cross(from, to);
-
         if (cosine < -0.9999f) {
             // A 180-degree rotation has no cross-product axis. Select a stable
             // perpendicular axis so an exact opposite drag remains valid.
             axis = glm::cross(from, std::abs(from.x) < 0.9f ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f));
             return glm::angleAxis(glm::pi<float>(), glm::normalize(axis)) * value;
         }
-
         const glm::quat rotation = glm::normalize(glm::quat(1.0f + cosine, axis.x, axis.y, axis.z));
         return rotation * value;
     }
@@ -76,17 +72,12 @@ namespace {
         return ImVec2(localDirection.x, -localDirection.y);
     }
 
-    void DrawProjectedArrow(
-        ImDrawList* drawList, const ImVec2& origin, 
-        const ImVec2& projectedDirection, float scale, 
-        ImU32 color, float thickness, const char* label) {
-        const float directionLength = 
-            std::sqrt(projectedDirection.x * projectedDirection.x + projectedDirection.y * projectedDirection.y);
+    void DrawProjectedArrow(ImDrawList* drawList, const ImVec2& origin, const ImVec2& projectedDirection, float scale, ImU32 color, float thickness, const char* label) {
+        const float directionLength = std::sqrt(projectedDirection.x * projectedDirection.x + projectedDirection.y * projectedDirection.y);
         if (directionLength < 0.001f) {
             drawList->AddCircleFilled(origin, 4.0f, color);
             return;
         }
-
         const ImVec2 normalizedDirection = Scale(projectedDirection, 1.0f / directionLength);
         const ImVec2 tip = Add(origin, Scale(projectedDirection, scale));
         const ImVec2 perpendicular(-normalizedDirection.y, normalizedDirection.x);
@@ -103,7 +94,6 @@ namespace {
         if (std::abs(glm::dot(primaryDirection, anchor)) > 0.95f) {
             anchor = glm::vec3(1.0f, 0.0f, 0.0f);
         }
-
         referenceRight = glm::normalize(glm::cross(anchor, primaryDirection));
         referenceUp = glm::normalize(glm::cross(primaryDirection, referenceRight));
     }
@@ -121,12 +111,7 @@ SimulationPanel::SimulationPanel(const SimulationPresetLibrary& presetLibrary)
     gravityDirectionState.lastValidDirection = glm::vec3(0.0f, -1.0f, 0.0f);
 }
 
-void SimulationPanel::DrawDirectionControl(
-    const char* controlId, const char* title, 
-    const char* primaryLabel, unsigned int primaryColor, 
-    const glm::vec3& fallbackDirection, 
-    DirectionTrackballState& state, glm::vec3& direction, 
-    const CameraFrame& cameraFrame) {
+void SimulationPanel::DrawDirectionControl(const char* controlId, const char* title, const char* primaryLabel, unsigned int primaryColor, const glm::vec3& fallbackDirection, DirectionTrackballState& state, glm::vec3& direction, const CameraFrame& cameraFrame) {
     const glm::vec3 configuredDirection = NormalizeOrFallback(direction, fallbackDirection);
     if (!state.hasLastValidDirection || (!state.isDragging && glm::dot(configuredDirection, state.lastValidDirection) < 0.99999f)) {
         state.lastValidDirection = configuredDirection;
@@ -154,33 +139,29 @@ void SimulationPanel::DrawDirectionControl(
     drawList->AddCircle(gizmoCenter, gizmoRadius, IM_COL32(110, 120, 140, 255), 48, 2.0f);
 
     if (activated) {
-        dragStartTrackball = MapToTrackball(ImGui::GetIO().MousePos, gizmoCenter, gizmoRadius);
-        dragStartWindDirection = lastValidWindDirection;
-        dragStartCameraFrame = cameraFrame;
-        isDraggingWindDirection = true;
+        state.dragStartTrackball = MapToTrackball(ImGui::GetIO().MousePos, gizmoCenter, gizmoRadius);
+        state.dragStartDirection = state.lastValidDirection;
+        state.dragStartCameraFrame = cameraFrame;
+        state.isDragging = true;
     }
-
-    if (active && isDraggingWindDirection) {
+    if (active && state.isDragging) {
         const glm::vec3 currentTrackball = MapToTrackball(ImGui::GetIO().MousePos, gizmoCenter, gizmoRadius);
-        const glm::vec3 startingLocalWind = ToCameraLocal(dragStartWindDirection, dragStartCameraFrame);
-        const glm::vec3 rotatedLocalWind = RotateByArcball(startingLocalWind, dragStartTrackball, currentTrackball);
-        lastValidWindDirection = NormalizeOrFallback(ToWorld(rotatedLocalWind, dragStartCameraFrame), lastValidWindDirection);
-        parameters.windDirectionAndFieldScale.x = lastValidWindDirection.x;
-        parameters.windDirectionAndFieldScale.y = lastValidWindDirection.y;
-        parameters.windDirectionAndFieldScale.z = lastValidWindDirection.z;
+        const glm::vec3 startingLocalDirection = ToCameraLocal(state.dragStartDirection, state.dragStartCameraFrame);
+        const glm::vec3 rotatedLocalDirection = RotateByArcball(startingLocalDirection, state.dragStartTrackball, currentTrackball);
+        state.lastValidDirection = NormalizeOrFallback(ToWorld(rotatedLocalDirection, state.dragStartCameraFrame), state.lastValidDirection);
+        direction = state.lastValidDirection;
     }
     if (!active) {
-        isDraggingWindDirection = false;
+        state.isDragging = false;
     }
 
-    const glm::vec3 localWind = ToCameraLocal(lastValidWindDirection, cameraFrame);
+    const glm::vec3 localDirection = ToCameraLocal(state.lastValidDirection, cameraFrame);
     glm::vec3 referenceRight;
     glm::vec3 referenceUp;
-    BuildWindOrthogonalBasis(localWind, referenceRight, referenceUp);
+    BuildOrthogonalBasis(localDirection, referenceRight, referenceUp);
 
-    // R, U, and P form an orthonormal 3D triad: each pair has dot product 0.
-    // Their changing projected lengths are therefore a real depth cue, not a
-    // 2D UI effect. Draw the translucent plane axes before the primary arrow.
+    // R, U, and the colored primary arrow form an orthonormal 3D triad. The
+    // translucent axes therefore provide an actual depth cue, not fake scaling.
     DrawProjectedArrow(drawList, gizmoCenter, ProjectCameraLocal(referenceRight), gizmoRadius * 0.58f, IM_COL32(235, 95, 95, 115), 2.0f, "R");
     DrawProjectedArrow(drawList, gizmoCenter, ProjectCameraLocal(referenceUp), gizmoRadius * 0.58f, IM_COL32(95, 220, 135, 115), 2.0f, "U");
     DrawProjectedArrow(drawList, gizmoCenter, ProjectCameraLocal(localDirection), gizmoRadius * 0.72f, static_cast<ImU32>(primaryColor), 4.0f, primaryLabel);
@@ -192,6 +173,22 @@ void SimulationPanel::DrawDirectionControl(
 void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame) {
     ImGui::Begin("Grass Simulation");
     ImGui::TextUnformatted("Directions are world-space unit vectors. u means an existing scene unit, not a metre.");
+
+    // Layout values are intentionally read-only at runtime. Changing any of
+    // them would require rebuilding blade buffers, descriptor sets, dispatches,
+    // and recorded draw commands rather than merely updating a mapped UBO.
+    const GrassFieldConfig& field = presetLibrary.GetGrassFieldConfig();
+    const float occupiedArea = field.patchSizeUnits * field.patchSizeUnits
+        * static_cast<float>(field.activePatchCount);
+    const double occupiedDensity = occupiedArea > 0.0f
+        ? static_cast<double>(field.totalBladeCount) / occupiedArea
+        : 0.0;
+    ImGui::SeparatorText("Grass field (startup configuration)");
+    ImGui::Text("Patch size: %.1f x %.1f u", field.patchSizeUnits, field.patchSizeUnits);
+    ImGui::Text("Grid: %u rows x %u columns", field.rows, field.columns);
+    ImGui::Text("Active patches: %u", field.activePatchCount);
+    ImGui::Text("Total blades: %llu", static_cast<unsigned long long>(field.totalBladeCount));
+    ImGui::Text("Occupied density: %.2f blades/u^2", occupiedDensity);
 
     ImGui::SeparatorText("Simulation presets");
     const std::vector<SimulationPreset>& simulationPresets = presetLibrary.GetSimulationPresets();

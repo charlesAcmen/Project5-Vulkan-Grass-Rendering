@@ -64,6 +64,18 @@ namespace {
             previousY = yPosition;
         }
     }
+
+    void scrollCallback(GLFWwindow* window, double xOffset, double yOffset) {
+        renderer->OnScroll(window, xOffset, yOffset);
+    }
+
+    void keyCallback(GLFWwindow* window, int key, int scanCode, int action, int modifiers) {
+        renderer->OnKey(window, key, scanCode, action, modifiers);
+    }
+
+    void characterCallback(GLFWwindow* window, unsigned int codepoint) {
+        renderer->OnCharacter(window, codepoint);
+    }
 }
 
 namespace {
@@ -148,6 +160,9 @@ int RunApplication() {
     glfwSetFramebufferSizeCallback(GetGLFWWindow(), resizeCallback);
     glfwSetMouseButtonCallback(GetGLFWWindow(), mouseDownCallback);
     glfwSetCursorPosCallback(GetGLFWWindow(), mouseMoveCallback);
+    glfwSetScrollCallback(GetGLFWWindow(), scrollCallback);
+    glfwSetKeyCallback(GetGLFWWindow(), keyCallback);
+    glfwSetCharCallback(GetGLFWWindow(), characterCallback);
 
     while (!ShouldQuit()) {
         glfwPollEvents();

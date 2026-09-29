@@ -169,7 +169,9 @@ int RunApplication() {
     scene->AddModel(plane);
     scene->AddBlades(blades);
 
-    renderer = new Renderer(device, swapChain, scene, camera);
+    SimulationPresetLibrary presetLibrary = SimulationPresetLibrary::LoadFromExecutableDirectory();
+    presetLibrary.ApplySimulationPreset(presetLibrary.GetDefaultSimulationPreset(), scene->GetSimulationParameters());
+    renderer = new Renderer(device, swapChain, scene, camera, presetLibrary);
 
     glfwSetFramebufferSizeCallback(GetGLFWWindow(), resizeCallback);
     glfwSetMouseButtonCallback(GetGLFWWindow(), mouseDownCallback);

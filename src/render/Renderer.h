@@ -2,8 +2,9 @@
 
 #include "Device.h"
 #include "SwapChain.h"
-#include "Scene.h"
-#include "Camera.h"
+#include "scene/Scene.h"
+#include "scene/Camera.h"
+#include "ui/ImGuiVulkanLayer.h"
 
 class Renderer {
 public:
@@ -18,7 +19,7 @@ public:
     void CreateCameraDescriptorSetLayout();
     void CreateModelDescriptorSetLayout();
     void CreateGrassDescriptorSetLayout();
-    void CreateTimeDescriptorSetLayout();
+    void CreateSimulationDescriptorSetLayout();
     void CreateComputeDescriptorSetLayout();
 
     void CreateDescriptorPool();
@@ -27,7 +28,7 @@ public:
     void CreateCameraDescriptorSet();
     void CreateModelDescriptorSets();
     void CreateGrassDescriptorSets();
-    void CreateTimeDescriptorSet();
+    void CreateSimulationDescriptorSet();
     void CreateComputeDescriptorSets();
 
     void CreateGraphicsPipeline();
@@ -39,9 +40,19 @@ public:
     void RecreateSwapChainResources();
 
     void RecordCommandBuffers();
+    void RecordCommandBuffer(uint32_t imageIndex);
     void RecordComputeCommandBuffer();
 
     void Frame();
+
+    // Forward GLFW callbacks to ImGui before the application decides whether
+    // the camera should consume the same input event.
+    void OnMouseButton(GLFWwindow* window, int button, int action, int modifiers);
+    void OnCursorPosition(GLFWwindow* window, double xPosition, double yPosition);
+    void OnScroll(GLFWwindow* window, double xOffset, double yOffset);
+    void OnKey(GLFWwindow* window, int key, int scanCode, int action, int modifiers);
+    void OnCharacter(GLFWwindow* window, unsigned int codepoint);
+    bool WantsMouseCapture() const;
 
 private:
     Device* device;
@@ -58,7 +69,7 @@ private:
     VkDescriptorSetLayout cameraDescriptorSetLayout;
     VkDescriptorSetLayout modelDescriptorSetLayout;
     VkDescriptorSetLayout grassDescriptorSetLayout;
-    VkDescriptorSetLayout timeDescriptorSetLayout;
+    VkDescriptorSetLayout simulationDescriptorSetLayout;
     VkDescriptorSetLayout computeDescriptorSetLayout;
     
     VkDescriptorPool descriptorPool;
@@ -66,7 +77,7 @@ private:
     VkDescriptorSet cameraDescriptorSet;
     std::vector<VkDescriptorSet> modelDescriptorSets;
     std::vector<VkDescriptorSet> grassDescriptorSets;
-    VkDescriptorSet timeDescriptorSet;
+    VkDescriptorSet simulationDescriptorSet;
     std::vector<VkDescriptorSet> computeDescriptorSets;
 
     VkSemaphore computeFinishedSemaphore;
@@ -90,6 +101,8 @@ private:
 
     std::vector<VkCommandBuffer> commandBuffers;
     VkCommandBuffer computeCommandBuffer;
+
+    ImGuiVulkanLayer* uiLayer = nullptr;
 
     void DestroySwapChainResources();
     void CreateSwapChainResources();

@@ -1,4 +1,37 @@
-file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+set(SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/BufferUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/BufferUtils.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Device.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Device.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Image.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Image.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Instance.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Instance.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/QueueFlags.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShaderModule.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShaderModule.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/SwapChain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SwapChain.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/Window.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Window.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Blades.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Blades.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Model.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Scene.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene/Vertex.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/render/Renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/render/Renderer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationParameters.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/ImGuiVulkanLayer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/ImGuiVulkanLayer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/SimulationPanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ui/SimulationPanel.h
+)
 
 file(GLOB IMAGES
     ${CMAKE_CURRENT_SOURCE_DIR}/images/*.jpg

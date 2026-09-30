@@ -75,6 +75,26 @@ void Camera::MoveRelative(const glm::vec3& offset) {
     memcpy(mappedData, &cameraBufferObject, sizeof(CameraBufferObject));
 }
 
+void Camera::UpdateViewMatrix() {
+    const float radYaw = glm::radians(yaw);
+    const float radPitch = glm::radians(pitch);
+    const float horizontalScale = std::cos(radPitch);
+    const glm::vec3 forward(
+        horizontalScale * std::sin(radYaw),
+        std::sin(radPitch),
+        horizontalScale * std::cos(radYaw));
+    cameraBufferObject.viewMatrix = glm::lookAt(
+        position, position + forward, glm::vec3(0.0f, 1.0f, 0.0f));
+}
+
+void Camera::UpdateProjectionMatrix(float aspectRatio) {
+    if (aspectRatio <= 0.0f) {
+        throw std::runtime_error("Camera aspect ratio must be greater than zero");
+    }
+    cameraBufferObject.projectionMatrix = glm::perspective(glm::radians(45.0f), aspectRatio, nearPlane, farPlane);
+    cameraBufferObject.projectionMatrix[1][1] *= -1; // Vulkan's framebuffer Y axis is inverted.
+}
+
 Camera::~Camera() {
   vkUnmapMemory(device->GetVkDevice(), bufferMemory);
   vkDestroyBuffer(device->GetVkDevice(), buffer, nullptr);

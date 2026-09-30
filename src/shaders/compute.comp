@@ -12,8 +12,8 @@ layout(set = 0, binding = 0) uniform CameraBufferObject {
 layout(std140, set = 1, binding = 0) uniform SimulationParameters {
     vec4 timeAndDeformationScales;
     vec4 windDirectionAndFieldScale;
-    vec4 windAmplitudesAndAngularSpeeds;
-    vec4 windWaveNumbers;
+    vec4 windAmplitudesAndAdvectionSpeeds;
+    vec4 windFieldSpatialScales;
     vec4 gravityDirectionAndPullRate;
 } simulation;
 

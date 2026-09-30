@@ -53,6 +53,15 @@ struct GrassFieldConfig {
     std::vector<std::vector<uint32_t>> patchBladeCounts;
 };
 
+// Startup-only controls for deterministic RG gust texture generation. The
+// texture remains immutable after upload; these values are not ImGui sliders.
+struct WindFieldConfig {
+    uint32_t resolution = 0;
+    uint32_t coarseResolution = 0;
+    uint32_t primarySeed = 0;
+    uint32_t secondarySeed = 0;
+};
+
 // Loads the checked-in, read-only JSON preset package beside the executable.
 // It deliberately owns no Vulkan resources and never writes configuration.
 class SimulationPresetLibrary {
@@ -64,6 +73,7 @@ public:
     const std::vector<GravityPreset>& GetGravityPresets() const;
     const SimulationPreset& GetDefaultSimulationPreset() const;
     const GrassFieldConfig& GetGrassFieldConfig() const;
+    const WindFieldConfig& GetWindFieldConfig() const;
 
     // Preserve delta/elapsed time when a UI button changes static controls.
     void ApplySimulationPreset(const SimulationPreset& preset, SimulationParameters& parameters) const;
@@ -75,4 +85,5 @@ private:
     std::vector<SimulationPreset> simulationPresets;
     std::vector<GravityPreset> gravityPresets;
     GrassFieldConfig grassFieldConfig;
+    WindFieldConfig windFieldConfig;
 };

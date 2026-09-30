@@ -165,8 +165,9 @@ void SimulationPanel::DrawDirectionControl(const char* controlId, const char* ti
     DrawProjectedArrow(drawList, gizmoCenter, ProjectCameraLocal(referenceRight), gizmoRadius * 0.58f, IM_COL32(235, 95, 95, 115), 2.0f, "R");
     DrawProjectedArrow(drawList, gizmoCenter, ProjectCameraLocal(referenceUp), gizmoRadius * 0.58f, IM_COL32(95, 220, 135, 115), 2.0f, "U");
     DrawProjectedArrow(drawList, gizmoCenter, ProjectCameraLocal(localDirection), gizmoRadius * 0.72f, static_cast<ImU32>(primaryColor), 4.0f, primaryLabel);
-    drawList->AddText(Add(gizmoStart, ImVec2(8.0f, 8.0f)), IM_COL32(220, 225, 235, 255), "drag to rotate | colored primary + translucent R/U");
-    drawList->AddText(Add(gizmoStart, ImVec2(8.0f, gizmoSize.y - 22.0f)), IM_COL32(170, 180, 195, 255), localDirection.z >= 0.0f ? "depth: toward camera" : "depth: away from camera");
+    // CameraFrame::forward points from the camera into the scene. Therefore a
+    // positive camera-local Z direction goes away from the camera, not toward it.
+    drawList->AddText(Add(gizmoStart, ImVec2(8.0f, gizmoSize.y - 22.0f)), IM_COL32(170, 180, 195, 255), localDirection.z >= 0.0f ? "depth: away from camera" : "depth: toward camera");
     ImGui::PopID();
 }
 

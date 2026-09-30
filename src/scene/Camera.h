@@ -64,5 +64,6 @@ public:
     CameraFrame GetFrame() const;
     
     void UpdateAspectRatio(float aspectRatio);
-    void UpdateOrbit(float deltaX, float deltaY, float deltaZ);
+    void Rotate(float deltaYaw, float deltaPitch);
+    void MoveRelative(const glm::vec3& offset);
 };

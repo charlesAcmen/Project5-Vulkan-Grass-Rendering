@@ -17,6 +17,9 @@ Renderer::Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* c
     camera(camera) {
 
     CreateCommandPools();
+    // The immutable gust texture is uploaded before compute descriptors are
+    // created, then sampled by every BladeGroup's compute descriptor set.
+    windField = new WindField(device, graphicsCommandPool, presetLibrary.GetWindFieldConfig());
     CreateRenderPass();
     CreateCameraDescriptorSetLayout();
     CreateModelDescriptorSetLayout();
@@ -483,9 +486,8 @@ void Renderer::CreateComputeDescriptorSets() {
     // one descriptor set. A descriptor set is the concrete resource table used
     // with computeDescriptorSetLayout; it is not one set per individual blade.
     //
-    // Phase 2 layout(set = 2, binding = 0) exposes only the group's mutable
-    // SourceBlades SSBO to compute.comp. Phase 3 will add visible-blade and
-    // indirect-command output buffers to this table.
+    // Binding 0 exposes each group's mutable source blades; binding 1 refers
+    // to the shared, immutable RG gust texture. Phase 3 adds output buffers.
     computeDescriptorSets.resize(scene->GetBlades().size());
 
     // There is nothing to allocate or update when the scene contains no groups.
@@ -1286,6 +1288,9 @@ Renderer::~Renderer() {
 
     delete uiLayer;
     uiLayer = nullptr;
+
+    delete windField;
+    windField = nullptr;
 
     vkDestroyFence(logicalDevice, inFlightFence, nullptr);
     vkDestroySemaphore(logicalDevice, computeFinishedSemaphore, nullptr);

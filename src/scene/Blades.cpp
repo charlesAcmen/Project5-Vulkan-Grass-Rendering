@@ -9,6 +9,15 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
     std::vector<Blade> blades;
     blades.reserve(bladeCount);
 
+    // Each patch owns a deterministic generator. A seed derived from its grid
+    // coordinate keeps every patch stable even when another cell is disabled
+    // or assigned a different blade count in the JSON layout.
+    std::mt19937 randomEngine(randomSeed);
+    std::uniform_real_distribution<float> unitDistribution(0.0f, 1.0f);
+    const auto generateRandomFloat = [&]() {
+        return unitDistribution(randomEngine);
+    };
+
     for (uint32_t i = 0; i < bladeCount; ++i) {
         Blade currentBlade = Blade();
 

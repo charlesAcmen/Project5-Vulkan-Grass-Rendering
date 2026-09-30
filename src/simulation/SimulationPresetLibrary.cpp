@@ -405,6 +405,20 @@ namespace {
         config.totalBladeCount = totalBladeCount;
         return config;
     }
+
+    WindFieldConfig ParseWindFieldConfig(const std::string& path) {
+        const JsonValue root = ReadJsonFile(path);
+        WindFieldConfig config;
+        config.resolution = RequireUnsignedInteger(root, "resolution");
+        config.coarseResolution = RequireUnsignedInteger(root, "coarse_resolution");
+        config.primarySeed = RequireUnsignedInteger(root, "primary_seed", true);
+        config.secondarySeed = RequireUnsignedInteger(root, "secondary_seed", true);
+
+        if (config.resolution < 2 || config.coarseResolution < 2 || config.coarseResolution > config.resolution) {
+            throw std::runtime_error("Wind field requires 2 <= coarse_resolution <= resolution");
+        }
+        return config;
+    }
 }
 
 SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {

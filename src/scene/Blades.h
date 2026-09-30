@@ -106,7 +106,11 @@ private:
     VkDeviceMemory indirectDrawBufferMemory;
 
 public:
-    Blades(Device* device, VkCommandPool commandPool, float planeDim, uint32_t bladeCount);
+    // patchCenterXZ is baked into every control point in world space. Compute
+    // physics, graphics, and future culling therefore agree on patch location
+    // without requiring a graphics-only model transform.
+    Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
+        const glm::vec2& patchCenterXZ, uint32_t bladeCount, uint32_t randomSeed);
     uint32_t GetBladeCount() const;
     VkBuffer GetSourceBladesBuffer() const;
     VkBuffer GetVisibleBladesBuffer() const;

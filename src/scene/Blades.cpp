@@ -1,12 +1,10 @@
 #include <vector>
+#include <random>
 #include "Blades.h"
 #include "BufferUtils.h"
 
-float generateRandomFloat() {
-    return rand() / (float)RAND_MAX;
-}
-
-Blades::Blades(Device* device, VkCommandPool commandPool, float planeDim, uint32_t bladeCount)
+Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
+    const glm::vec2& patchCenterXZ, uint32_t bladeCount, uint32_t randomSeed)
     : Model(device, commandPool, {}, {}), bladeCount(bladeCount) {
     std::vector<Blade> blades;
     blades.reserve(bladeCount);

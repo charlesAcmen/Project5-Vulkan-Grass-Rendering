@@ -314,17 +314,19 @@ namespace {
         const glm::vec3 windDirection = RequireUnitDirection(root, "wind_direction");
         const glm::vec3 gravityDirection = RequireUnitDirection(root, "gravity_direction");
         preset.parameters.windDirectionAndFieldScale = glm::vec4(windDirection, RequireNumber(root, "wind_field_scale"));
-        preset.parameters.windAmplitudesAndAngularSpeeds = glm::vec4(
+        preset.parameters.windAmplitudesAndAdvectionSpeeds = glm::vec4(
             RequireNumber(root, "primary_amplitude"),
             RequireNumber(root, "secondary_amplitude"),
-            RequireNumber(root, "primary_angular_speed"),
-            RequireNumber(root, "secondary_angular_speed")
+            RequireNumber(root, "primary_advection_speed"),
+            RequireNumber(root, "secondary_advection_speed")
         );
-        preset.parameters.windWaveNumbers = glm::vec4(
-            RequireNumber(root, "primary_x_wave_number"),
-            RequireNumber(root, "primary_z_wave_number"),
-            RequireNumber(root, "secondary_x_wave_number"),
-            0.0f
+        const float primaryFieldScale = RequireNumber(root, "primary_field_scale");
+        const float secondaryFieldScale = RequireNumber(root, "secondary_field_scale");
+        // The UBO stores each isotropic scalar twice to retain its established
+        // vec4 ABI while the shader consumes it as an XZ scale pair.
+        preset.parameters.windFieldSpatialScales = glm::vec4(
+            primaryFieldScale, primaryFieldScale,
+            secondaryFieldScale, secondaryFieldScale
         );
         preset.parameters.gravityDirectionAndPullRate = glm::vec4(gravityDirection, RequireNumber(root, "gravity_pull_rate"));
         preset.parameters.timeAndDeformationScales.z = RequireNumber(root, "recovery_rate_scale");

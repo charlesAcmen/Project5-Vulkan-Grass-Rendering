@@ -55,19 +55,23 @@ void Camera::UpdateAspectRatio(float aspectRatio) {
     memcpy(mappedData, &cameraBufferObject, sizeof(CameraBufferObject));
 }
 
-void Camera::UpdateOrbit(float deltaX, float deltaY, float deltaZ) {
-    theta += deltaX;
-    phi += deltaY;
-    r = glm::clamp(r - deltaZ, 1.0f, 50.0f);
+void Camera::Rotate(float deltaYaw, float deltaPitch) {
+    yaw += deltaYaw;
+    pitch = glm::clamp(pitch + deltaPitch, -85.0f, 85.0f);
 
-    float radTheta = glm::radians(theta);
-    float radPhi = glm::radians(phi);
+    UpdateViewMatrix();
+    memcpy(mappedData, &cameraBufferObject, sizeof(CameraBufferObject));
+}
 
-    glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), radTheta, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::mat4(1.0f), radPhi, glm::vec3(1.0f, 0.0f, 0.0f));
-    glm::mat4 finalTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f)) * rotation * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, r));
+void Camera::MoveRelative(const glm::vec3& offset) {
+    const CameraFrame frame = GetFrame();
+    // WASD follows the camera view while Space/Ctrl stays aligned with world
+    // up, which keeps vertical travel predictable over a horizontal field.
+    position += frame.right * offset.x
+        + glm::vec3(0.0f, 1.0f, 0.0f) * offset.y
+        + frame.forward * offset.z;
 
-    cameraBufferObject.viewMatrix = glm::inverse(finalTransform);
-
+    UpdateViewMatrix();
     memcpy(mappedData, &cameraBufferObject, sizeof(CameraBufferObject));
 }
 

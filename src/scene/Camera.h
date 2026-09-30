@@ -37,7 +37,14 @@ private:
 
     void* mappedData;
 
-    float r, theta, phi;
+    glm::vec3 position;
+    float yaw;
+    float pitch;
+    float nearPlane;
+    float farPlane;
+
+    void UpdateViewMatrix();
+    void UpdateProjectionMatrix(float aspectRatio);
 
 public:
     Camera(Device* device, float aspectRatio);

@@ -5,6 +5,7 @@
 #include "scene/Scene.h"
 #include "scene/Camera.h"
 #include "simulation/SimulationPresetLibrary.h"
+#include "simulation/WindField.h"
 #include "ui/ImGuiVulkanLayer.h"
 
 class Renderer {
@@ -62,6 +63,7 @@ private:
     SwapChain* swapChain;
     Scene* scene;
     Camera* camera;
+    WindField* windField = nullptr;
 
     VkCommandPool graphicsCommandPool;
     VkCommandPool computeCommandPool;

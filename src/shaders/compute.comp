@@ -32,6 +32,10 @@ layout(std430, set = 2, binding = 0) buffer SourceBlades {
     Blade blades[];
 } sourceBlades;
 
+// R and G hold independent, continuous Primary and Secondary gust fields.
+// This immutable texture is generated and uploaded once during startup.
+layout(set = 2, binding = 1) uniform sampler2D gustField;
+
 // The project is using vkCmdDrawIndirect to use a buffer as the arguments for a draw call
 // This is sort of an advanced feature so we've showed you what this buffer should look like
 //

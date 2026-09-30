@@ -36,8 +36,8 @@ struct alignas(16) SimulationParameters {
           windDirectionAndFieldScale(1.0f, 0.0f, 0.35f, 1.0f),
           // The two gust envelopes are added. Setting both amplitudes to zero
           // deliberately removes wind, while the final component scales them.
-          windAmplitudesAndAngularSpeeds(0.55f, 0.25f, 1.20f, 0.45f),
-          windWaveNumbers(0.45f, 0.25f, 0.80f, 0.0f),
+          windAmplitudesAndAdvectionSpeeds(0.55f, 0.25f, 1.20f, 0.45f),
+          windFieldSpatialScales(0.020f, 0.020f, 0.014f, 0.014f),
           gravityDirectionAndPullRate(0.0f, -1.0f, 0.0f, 0.90f) {
     }
 };
@@ -46,6 +46,6 @@ static_assert(sizeof(glm::vec4) == 16, "Simulation UBO assumes 16-byte vec4 valu
 static_assert(sizeof(SimulationParameters) == 5 * sizeof(glm::vec4), "Simulation UBO must occupy five std140 vec4 slots");
 static_assert(offsetof(SimulationParameters, timeAndDeformationScales) == 0, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windDirectionAndFieldScale) == 16, "Unexpected SimulationParameters offset");
-static_assert(offsetof(SimulationParameters, windAmplitudesAndAngularSpeeds) == 32, "Unexpected SimulationParameters offset");
-static_assert(offsetof(SimulationParameters, windWaveNumbers) == 48, "Unexpected SimulationParameters offset");
+static_assert(offsetof(SimulationParameters, windAmplitudesAndAdvectionSpeeds) == 32, "Unexpected SimulationParameters offset");
+static_assert(offsetof(SimulationParameters, windFieldSpatialScales) == 48, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, gravityDirectionAndPullRate) == 64, "Unexpected SimulationParameters offset");

@@ -1378,3 +1378,7 @@ void Renderer::OnCharacter(GLFWwindow* window, unsigned int codepoint) {
 bool Renderer::WantsMouseCapture() const {
     return uiLayer != nullptr && uiLayer->WantsMouseCapture();
 }
+
+bool Renderer::WantsKeyboardCapture() const {
+    return uiLayer != nullptr && uiLayer->WantsKeyboardCapture();
+}

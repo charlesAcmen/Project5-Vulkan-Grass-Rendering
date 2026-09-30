@@ -412,6 +412,7 @@ SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {
 
     SimulationPresetLibrary library;
     library.grassFieldConfig = ParseGrassFieldConfig(JoinPath(presetDirectory, "grass-field.json"));
+    library.windFieldConfig = ParseWindFieldConfig(JoinPath(presetDirectory, "wind-field.json"));
     library.ranges.windFieldScale = RequireRange(rangesRoot, "wind_field_scale");
     library.ranges.primaryAmplitude = RequireRange(rangesRoot, "primary_amplitude");
     library.ranges.secondaryAmplitude = RequireRange(rangesRoot, "secondary_amplitude");
@@ -459,6 +460,10 @@ const SimulationPreset& SimulationPresetLibrary::GetDefaultSimulationPreset() co
 
 const GrassFieldConfig& SimulationPresetLibrary::GetGrassFieldConfig() const {
     return grassFieldConfig;
+}
+
+const WindFieldConfig& SimulationPresetLibrary::GetWindFieldConfig() const {
+    return windFieldConfig;
 }
 
 void SimulationPresetLibrary::ApplySimulationPreset(const SimulationPreset& preset, SimulationParameters& parameters) const {

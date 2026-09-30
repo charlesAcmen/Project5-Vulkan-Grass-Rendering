@@ -19,9 +19,10 @@ struct alignas(16) SimulationParameters {
     // scale, z/w = their field-advection speeds in world units per second.
     glm::vec4 windAmplitudesAndAdvectionSpeeds;
 
-    // x/y = primary X/Z wave numbers and z = secondary X wave number, all
-    // expressed in radians per world unit.
-    glm::vec4 windWaveNumbers;
+    // x/y = duplicated primary field scale and z/w = duplicated secondary
+    // field scale. Keeping each pair equal makes the controls isotropic while
+    // preserving the existing std140 vec4 slot and CPU/GPU ABI.
+    glm::vec4 windFieldSpatialScales;
 
     // xyz = world-space gravity direction, w = gravity pull rate in world
     // units per second. This first-order model does not integrate acceleration,

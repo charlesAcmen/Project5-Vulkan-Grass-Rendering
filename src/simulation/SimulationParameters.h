@@ -15,9 +15,9 @@ struct alignas(16) SimulationParameters {
     // xyz = world-space wind direction, w = total wind-field scale.
     glm::vec4 windDirectionAndFieldScale;
 
-    // x/y = non-negative primary/secondary wind amplitudes before the field
-    // scale, z/w = their phase angular speeds in radians per second.
-    glm::vec4 windAmplitudesAndAngularSpeeds;
+    // x/y = non-negative primary/secondary gust amplitudes before the field
+    // scale, z/w = their field-advection speeds in world units per second.
+    glm::vec4 windAmplitudesAndAdvectionSpeeds;
 
     // x/y = primary X/Z wave numbers and z = secondary X wave number, all
     // expressed in radians per world unit.

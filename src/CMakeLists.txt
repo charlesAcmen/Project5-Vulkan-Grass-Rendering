@@ -29,6 +29,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationParameters.h
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationPresetLibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationPresetLibrary.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulation/WindField.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/simulation/WindField.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ImGuiVulkanLayer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/ImGuiVulkanLayer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/ui/SimulationPanel.cpp

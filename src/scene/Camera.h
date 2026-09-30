@@ -26,6 +26,16 @@ struct CameraFrame {
     glm::vec3 forward;
 };
 
+// Scene-derived startup values keep the camera useful as the configured grass
+// grid changes size. Position and target define only the initial view; mouse
+// rotation pivots around the camera position after startup.
+struct CameraConfiguration {
+    glm::vec3 position;
+    glm::vec3 target;
+    float nearPlane;
+    float farPlane;
+};
+
 class Camera {
 private:
     Device* device;
@@ -47,7 +57,7 @@ private:
     void UpdateProjectionMatrix(float aspectRatio);
 
 public:
-    Camera(Device* device, float aspectRatio);
+    Camera(Device* device, float aspectRatio, const CameraConfiguration& configuration);
     ~Camera();
 
     VkBuffer GetBuffer() const;

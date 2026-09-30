@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cmath>
+#include <stdexcept>
 
 #define GLM_FORCE_RADIANS
 // Use Vulkan depth range of 0.0 to 1.0 instead of OpenGL

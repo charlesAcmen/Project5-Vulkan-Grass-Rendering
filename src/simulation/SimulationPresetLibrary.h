@@ -17,11 +17,10 @@ struct SimulationControlRanges {
     SimulationSliderRange windFieldScale;
     SimulationSliderRange primaryAmplitude;
     SimulationSliderRange secondaryAmplitude;
-    SimulationSliderRange primaryAngularSpeed;
-    SimulationSliderRange secondaryAngularSpeed;
-    SimulationSliderRange primaryXWaveNumber;
-    SimulationSliderRange primaryZWaveNumber;
-    SimulationSliderRange secondaryXWaveNumber;
+    SimulationSliderRange primaryAdvectionSpeed;
+    SimulationSliderRange secondaryAdvectionSpeed;
+    SimulationSliderRange primaryFieldSpatialScale;
+    SimulationSliderRange secondaryFieldSpatialScale;
     SimulationSliderRange gravityPullRate;
     SimulationSliderRange recoveryRateScale;
     SimulationSliderRange frontGravityScale;

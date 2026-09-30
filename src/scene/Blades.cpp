@@ -23,10 +23,12 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
 
         glm::vec3 bladeUp(0.0f, 1.0f, 0.0f);
 
-        // Generate positions and direction (v0)
-        float x = (generateRandomFloat() - 0.5f) * planeDim;
+        // Generate the root directly in world space. Row/column placement is
+        // deliberately resolved on the CPU so compute wind and culling never
+        // see every patch stacked around the local origin.
+        float x = patchCenterXZ.x + (generateRandomFloat() - 0.5f) * patchSizeUnits;
         float y = 0.0f;
-        float z = (generateRandomFloat() - 0.5f) * planeDim;
+        float z = patchCenterXZ.y + (generateRandomFloat() - 0.5f) * patchSizeUnits;
         float direction = generateRandomFloat() * 2.f * 3.14159265f;
         glm::vec3 bladePosition(x, y, z);
         currentBlade.v0 = glm::vec4(bladePosition, direction);

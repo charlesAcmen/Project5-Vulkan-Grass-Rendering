@@ -173,95 +173,105 @@ void SimulationPanel::DrawDirectionControl(const char* controlId, const char* ti
 
 void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame) {
     ImGui::Begin("Grass Simulation");
-    ImGui::TextUnformatted("Directions are world-space unit vectors. u means an existing scene unit, not a metre.");
 
     // Layout values are intentionally read-only at runtime. Changing any of
     // them would require rebuilding blade buffers, descriptor sets, dispatches,
     // and recorded draw commands rather than merely updating a mapped UBO.
-    const GrassFieldConfig& field = presetLibrary.GetGrassFieldConfig();
-    const float occupiedArea = field.patchSizeUnits * field.patchSizeUnits
-        * static_cast<float>(field.activePatchCount);
-    const double occupiedDensity = occupiedArea > 0.0f
-        ? static_cast<double>(field.totalBladeCount) / occupiedArea
-        : 0.0;
-    ImGui::SeparatorText("Grass field (startup configuration)");
-    ImGui::Text("Patch size: %.1f x %.1f u", field.patchSizeUnits, field.patchSizeUnits);
-    ImGui::Text("Grid: %u rows x %u columns", field.rows, field.columns);
-    ImGui::Text("Active patches: %u", field.activePatchCount);
-    ImGui::Text("Total blades: %llu", static_cast<unsigned long long>(field.totalBladeCount));
-    ImGui::Text("Occupied density: %.2f blades/u^2", occupiedDensity);
-
-    ImGui::SeparatorText("Simulation presets");
-    const std::vector<SimulationPreset>& simulationPresets = presetLibrary.GetSimulationPresets();
-    for (size_t index = 0; index < simulationPresets.size(); ++index) {
-        const SimulationPreset& preset = simulationPresets[index];
-        ImGui::PushID(preset.id.c_str());
-        if (ImGui::Button(preset.label.c_str())) {
-            // Applying a preset preserves delta/elapsed time: it does not
-            // restart the clock or teleport the already simulated blades.
-            presetLibrary.ApplySimulationPreset(preset, parameters);
-        }
-        ShowDescriptionTooltip(preset.description.c_str());
-        ImGui::PopID();
-        if (index + 1 < simulationPresets.size()) ImGui::SameLine();
+    if (ImGui::CollapsingHeader("Grass field (startup configuration)")) {
+        const GrassFieldConfig& field = presetLibrary.GetGrassFieldConfig();
+        const float occupiedArea = field.patchSizeUnits * field.patchSizeUnits
+            * static_cast<float>(field.activePatchCount);
+        const double occupiedDensity = occupiedArea > 0.0f
+            ? static_cast<double>(field.totalBladeCount) / occupiedArea
+            : 0.0;
+        ImGui::Text("Patch size: %.1f x %.1f u", field.patchSizeUnits, field.patchSizeUnits);
+        ImGui::Text("Grid: %u rows x %u columns", field.rows, field.columns);
+        ImGui::Text("Active patches: %u", field.activePatchCount);
+        ImGui::Text("Total blades: %llu", static_cast<unsigned long long>(field.totalBladeCount));
+        ImGui::Text("Occupied density: %.2f blades/u^2", occupiedDensity);
     }
 
-    ImGui::SeparatorText("Gravity presets");
-    const std::vector<GravityPreset>& gravityPresets = presetLibrary.GetGravityPresets();
-    for (size_t index = 0; index < gravityPresets.size(); ++index) {
-        const GravityPreset& preset = gravityPresets[index];
-        ImGui::PushID(preset.id.c_str());
-        if (ImGui::Button(preset.label.c_str())) {
-            // A gravity preset changes only magnitude/front bend. It retains
-            // the current gravity XYZ selected through the 3D gizmo.
-            presetLibrary.ApplyGravityPreset(preset, parameters);
+    if (ImGui::CollapsingHeader("Simulation presets", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const std::vector<SimulationPreset>& simulationPresets = presetLibrary.GetSimulationPresets();
+        for (size_t index = 0; index < simulationPresets.size(); ++index) {
+            const SimulationPreset& preset = simulationPresets[index];
+            ImGui::PushID(preset.id.c_str());
+            if (ImGui::Button(preset.label.c_str())) {
+                // Applying a preset preserves delta/elapsed time: it does not
+                // restart the clock or teleport the already simulated blades.
+                presetLibrary.ApplySimulationPreset(preset, parameters);
+            }
+            ShowDescriptionTooltip(preset.description.c_str());
+            ImGui::PopID();
+            if (index + 1 < simulationPresets.size()) ImGui::SameLine();
         }
-        ShowDescriptionTooltip(preset.description.c_str());
-        ImGui::PopID();
-        if (index + 1 < gravityPresets.size()) ImGui::SameLine();
+    }
+
+    if (ImGui::CollapsingHeader("Gravity presets", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const std::vector<GravityPreset>& gravityPresets = presetLibrary.GetGravityPresets();
+        for (size_t index = 0; index < gravityPresets.size(); ++index) {
+            const GravityPreset& preset = gravityPresets[index];
+            ImGui::PushID(preset.id.c_str());
+            if (ImGui::Button(preset.label.c_str())) {
+                // A gravity preset changes only magnitude/front bend. It retains
+                // the current gravity XYZ selected through the 3D gizmo.
+                presetLibrary.ApplyGravityPreset(preset, parameters);
+            }
+            ShowDescriptionTooltip(preset.description.c_str());
+            ImGui::PopID();
+            if (index + 1 < gravityPresets.size()) ImGui::SameLine();
+        }
     }
 
     const SimulationControlRanges& ranges = presetLibrary.GetRanges();
-    ImGui::SeparatorText("Wind");
-    ImGui::SliderFloat("Wind-field scale", &parameters.windDirectionAndFieldScale.w, ranges.windFieldScale.minimum, ranges.windFieldScale.maximum, "%.2f");
-    ImGui::SliderFloat("Primary bend-rate amplitude (u/s)", &parameters.windAmplitudesAndAngularSpeeds.x, ranges.primaryAmplitude.minimum, ranges.primaryAmplitude.maximum, "%.2f");
-    ImGui::SliderFloat("Secondary bend-rate amplitude (u/s)", &parameters.windAmplitudesAndAngularSpeeds.y, ranges.secondaryAmplitude.minimum, ranges.secondaryAmplitude.maximum, "%.2f");
-    ImGui::SliderFloat("Primary phase angular speed (rad/s)", &parameters.windAmplitudesAndAngularSpeeds.z, ranges.primaryAngularSpeed.minimum, ranges.primaryAngularSpeed.maximum, "%.2f");
-    ImGui::SliderFloat("Secondary phase angular speed (rad/s)", &parameters.windAmplitudesAndAngularSpeeds.w, ranges.secondaryAngularSpeed.minimum, ranges.secondaryAngularSpeed.maximum, "%.2f");
-    ImGui::SliderFloat("Primary X wave number (rad/u)", &parameters.windWaveNumbers.x, ranges.primaryXWaveNumber.minimum, ranges.primaryXWaveNumber.maximum, "%.2f");
-    ImGui::SliderFloat("Primary Z wave number (rad/u)", &parameters.windWaveNumbers.y, ranges.primaryZWaveNumber.minimum, ranges.primaryZWaveNumber.maximum, "%.2f");
-    ImGui::SliderFloat("Secondary X wave number (rad/u)", &parameters.windWaveNumbers.z, ranges.secondaryXWaveNumber.minimum, ranges.secondaryXWaveNumber.maximum, "%.2f");
+    if (ImGui::CollapsingHeader("Wind", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Wind-field scale", &parameters.windDirectionAndFieldScale.w, ranges.windFieldScale.minimum, ranges.windFieldScale.maximum, "%.2f");
+        ImGui::SliderFloat("Primary bend-rate amplitude (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.x, ranges.primaryAmplitude.minimum, ranges.primaryAmplitude.maximum, "%.2f");
+        ImGui::SliderFloat("Secondary bend-rate amplitude (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.y, ranges.secondaryAmplitude.minimum, ranges.secondaryAmplitude.maximum, "%.2f");
+        ImGui::SliderFloat("Primary field advection speed (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.z, ranges.primaryAdvectionSpeed.minimum, ranges.primaryAdvectionSpeed.maximum, "%.2f");
+        ImGui::SliderFloat("Secondary field advection speed (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.w, ranges.secondaryAdvectionSpeed.minimum, ranges.secondaryAdvectionSpeed.maximum, "%.2f");
+        float primaryFieldScale = parameters.windFieldSpatialScales.x;
+        if (ImGui::SliderFloat("Primary field scale (cycles/u)", &primaryFieldScale, ranges.primaryFieldSpatialScale.minimum, ranges.primaryFieldSpatialScale.maximum, "%.3f")) {
+            parameters.windFieldSpatialScales.x = primaryFieldScale;
+            parameters.windFieldSpatialScales.y = primaryFieldScale;
+        }
+        float secondaryFieldScale = parameters.windFieldSpatialScales.z;
+        if (ImGui::SliderFloat("Secondary field scale (cycles/u)", &secondaryFieldScale, ranges.secondaryFieldSpatialScale.minimum, ranges.secondaryFieldSpatialScale.maximum, "%.3f")) {
+            parameters.windFieldSpatialScales.z = secondaryFieldScale;
+            parameters.windFieldSpatialScales.w = secondaryFieldScale;
+        }
 
-    glm::vec3 windDirection(parameters.windDirectionAndFieldScale.x, parameters.windDirectionAndFieldScale.y, parameters.windDirectionAndFieldScale.z);
-    DrawDirectionControl("wind_direction", "Camera-relative wind direction control", "W", IM_COL32(80, 190, 255, 255), glm::vec3(1.0f, 0.0f, 0.35f), windDirectionState, windDirection, cameraFrame);
-    parameters.windDirectionAndFieldScale.x = windDirection.x;
-    parameters.windDirectionAndFieldScale.y = windDirection.y;
-    parameters.windDirectionAndFieldScale.z = windDirection.z;
-
-    ImGui::SeparatorText("Gravity and recovery");
-    ImGui::SliderFloat("Gravity pull rate (u/s)", &parameters.gravityDirectionAndPullRate.w, ranges.gravityPullRate.minimum, ranges.gravityPullRate.maximum, "%.2f");
-    glm::vec3 gravityDirection(parameters.gravityDirectionAndPullRate.x, parameters.gravityDirectionAndPullRate.y, parameters.gravityDirectionAndPullRate.z);
-    DrawDirectionControl("gravity_direction", "Camera-relative gravity direction control", "G", IM_COL32(255, 185, 65, 255), glm::vec3(0.0f, -1.0f, 0.0f), gravityDirectionState, gravityDirection, cameraFrame);
-    if (ImGui::Button("Reset gravity direction")) {
-        // This deliberately resets direction only. Magnitude and front-gravity
-        // scale remain available for the current gravity preset or slider edit.
-        gravityDirection = glm::vec3(0.0f, -1.0f, 0.0f);
-        gravityDirectionState.lastValidDirection = gravityDirection;
-        gravityDirectionState.hasLastValidDirection = true;
-        gravityDirectionState.isDragging = false;
+        glm::vec3 windDirection(parameters.windDirectionAndFieldScale.x, parameters.windDirectionAndFieldScale.y, parameters.windDirectionAndFieldScale.z);
+        DrawDirectionControl("wind_direction", "Camera-relative wind direction control", "W", IM_COL32(80, 190, 255, 255), glm::vec3(1.0f, 0.0f, 0.35f), windDirectionState, windDirection, cameraFrame);
+        parameters.windDirectionAndFieldScale.x = windDirection.x;
+        parameters.windDirectionAndFieldScale.y = windDirection.y;
+        parameters.windDirectionAndFieldScale.z = windDirection.z;
     }
-    ImGui::SameLine();
-    ImGui::TextDisabled("Restores vertical downward XYZ only");
-    parameters.gravityDirectionAndPullRate.x = gravityDirection.x;
-    parameters.gravityDirectionAndPullRate.y = gravityDirection.y;
-    parameters.gravityDirectionAndPullRate.z = gravityDirection.z;
 
-    // The 1/30 s delta clamp keeps the widened recovery range bounded on a
-    // long frame, but very high values intentionally make the grass rigid.
-    ImGui::SliderFloat("Recovery-rate scale", &parameters.timeAndDeformationScales.z, ranges.recoveryRateScale.minimum, ranges.recoveryRateScale.maximum, "%.2f");
-    ImGui::SliderFloat("Front-gravity scale", &parameters.timeAndDeformationScales.w, ranges.frontGravityScale.minimum, ranges.frontGravityScale.maximum, "%.2f");
+    if (ImGui::CollapsingHeader("Gravity and recovery", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Gravity pull rate (u/s)", &parameters.gravityDirectionAndPullRate.w, ranges.gravityPullRate.minimum, ranges.gravityPullRate.maximum, "%.2f");
+        glm::vec3 gravityDirection(parameters.gravityDirectionAndPullRate.x, parameters.gravityDirectionAndPullRate.y, parameters.gravityDirectionAndPullRate.z);
+        DrawDirectionControl("gravity_direction", "Camera-relative gravity direction control", "G", IM_COL32(255, 185, 65, 255), glm::vec3(0.0f, -1.0f, 0.0f), gravityDirectionState, gravityDirection, cameraFrame);
+        if (ImGui::Button("Reset gravity direction")) {
+            // This deliberately resets direction only. Magnitude and front-gravity
+            // scale remain available for the current gravity preset or slider edit.
+            gravityDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+            gravityDirectionState.lastValidDirection = gravityDirection;
+            gravityDirectionState.hasLastValidDirection = true;
+            gravityDirectionState.isDragging = false;
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("Restores vertical downward XYZ only");
+        parameters.gravityDirectionAndPullRate.x = gravityDirection.x;
+        parameters.gravityDirectionAndPullRate.y = gravityDirection.y;
+        parameters.gravityDirectionAndPullRate.z = gravityDirection.z;
 
-    ImGui::TextDisabled("Zero both gust amplitudes (or the field scale) to remove wind; zero gravity pull rate to remove gravity.");
-    ImGui::TextDisabled("These are first-order visual bend rates, not measured wind speed or gravitational acceleration.");
+        // The 1/30 s delta clamp keeps the widened recovery range bounded on a
+        // long frame, but very high values intentionally make the grass rigid.
+        ImGui::SliderFloat("Recovery-rate scale", &parameters.timeAndDeformationScales.z, ranges.recoveryRateScale.minimum, ranges.recoveryRateScale.maximum, "%.2f");
+        ImGui::SliderFloat("Front-gravity scale", &parameters.timeAndDeformationScales.w, ranges.frontGravityScale.minimum, ranges.frontGravityScale.maximum, "%.2f");
+
+        ImGui::TextDisabled("Zero both gust amplitudes (or the field scale) to remove wind; zero gravity pull rate to remove gravity.");
+    }
     ImGui::End();
 }

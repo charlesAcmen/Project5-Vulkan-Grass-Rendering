@@ -115,3 +115,7 @@ void ImGuiVulkanLayer::OnCharacter(GLFWwindow* window, unsigned int codepoint) {
 bool ImGuiVulkanLayer::WantsMouseCapture() const {
     return initialized && ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantCaptureMouse;
 }
+
+bool ImGuiVulkanLayer::WantsKeyboardCapture() const {
+    return initialized && ImGui::GetCurrentContext() != nullptr && ImGui::GetIO().WantCaptureKeyboard;
+}

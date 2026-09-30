@@ -26,6 +26,7 @@ public:
     void OnKey(GLFWwindow* window, int key, int scanCode, int action, int modifiers);
     void OnCharacter(GLFWwindow* window, unsigned int codepoint);
     bool WantsMouseCapture() const;
+    bool WantsKeyboardCapture() const;
 
 private:
     bool initialized = false;

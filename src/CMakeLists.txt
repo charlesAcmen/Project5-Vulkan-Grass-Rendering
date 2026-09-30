@@ -148,6 +148,9 @@ foreach(PRESET_FILE ${SIMULATION_PRESET_FILES})
 endforeach()
 
 target_link_libraries(vulkan_grass_rendering ${ASSIMP_LIBRARIES} Vulkan::Vulkan glfw project_dear_imgui)
+if(WIN32)
+    target_link_libraries(vulkan_grass_rendering imm32)
+endif()
 target_include_directories(vulkan_grass_rendering PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${GLM_INCLUDE_DIR}

@@ -250,12 +250,23 @@ void Renderer::CreateComputeDescriptorSetLayout() {
     sourceBladesLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     sourceBladesLayoutBinding.pImmutableSamplers = nullptr;
 
-    // Phase 2 only mutates the source blades. Phase 3 will extend this layout with
-    // the visible-blade and indirect-command output buffers used by culling.
+    VkDescriptorSetLayoutBinding gustFieldLayoutBinding = {};
+    gustFieldLayoutBinding.binding = 1;
+    gustFieldLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    gustFieldLayoutBinding.descriptorCount = 1;
+    gustFieldLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    gustFieldLayoutBinding.pImmutableSamplers = nullptr;
+
+    // Phase 2.5 adds only an immutable input texture. Phase 3 keeps bindings
+    // 0/1 intact and adds visible-blade and indirect-command output buffers.
+    const std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
+        sourceBladesLayoutBinding,
+        gustFieldLayoutBinding
+    };
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &sourceBladesLayoutBinding;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(logicalDevice, &layoutInfo, nullptr, &computeDescriptorSetLayout) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create compute descriptor set layout");
@@ -270,7 +281,8 @@ void Renderer::CreateDescriptorPool() {
     // unit all uniform buffer descriptor rather than separate by camera,models+blades,time etc
     std::vector<VkDescriptorPoolSize> poolSizes = {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 + modelCount + bladeGroupCount },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, modelCount },
+        // Every compute descriptor set samples the one shared gust texture.
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, modelCount + bladeGroupCount },
         // TODO: Add any additional types and counts of descriptors you will need to allocate
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bladeGroupCount },
     };

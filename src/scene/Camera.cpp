@@ -50,8 +50,7 @@ CameraFrame Camera::GetFrame() const {
 }
 
 void Camera::UpdateAspectRatio(float aspectRatio) {
-    cameraBufferObject.projectionMatrix = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 100.0f);
-    cameraBufferObject.projectionMatrix[1][1] *= -1; // y-coordinate is flipped
+    UpdateProjectionMatrix(aspectRatio);
     memcpy(mappedData, &cameraBufferObject, sizeof(CameraBufferObject));
 }
 

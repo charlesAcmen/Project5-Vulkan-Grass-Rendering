@@ -418,11 +418,10 @@ SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {
     library.ranges.windFieldScale = RequireRange(rangesRoot, "wind_field_scale");
     library.ranges.primaryAmplitude = RequireRange(rangesRoot, "primary_amplitude");
     library.ranges.secondaryAmplitude = RequireRange(rangesRoot, "secondary_amplitude");
-    library.ranges.primaryAngularSpeed = RequireRange(rangesRoot, "primary_angular_speed");
-    library.ranges.secondaryAngularSpeed = RequireRange(rangesRoot, "secondary_angular_speed");
-    library.ranges.primaryXWaveNumber = RequireRange(rangesRoot, "primary_x_wave_number");
-    library.ranges.primaryZWaveNumber = RequireRange(rangesRoot, "primary_z_wave_number");
-    library.ranges.secondaryXWaveNumber = RequireRange(rangesRoot, "secondary_x_wave_number");
+    library.ranges.primaryAdvectionSpeed = RequireRange(rangesRoot, "primary_advection_speed");
+    library.ranges.secondaryAdvectionSpeed = RequireRange(rangesRoot, "secondary_advection_speed");
+    library.ranges.primaryFieldSpatialScale = RequireRange(rangesRoot, "primary_field_scale");
+    library.ranges.secondaryFieldSpatialScale = RequireRange(rangesRoot, "secondary_field_scale");
     library.ranges.gravityPullRate = RequireRange(rangesRoot, "gravity_pull_rate");
     library.ranges.recoveryRateScale = RequireRange(rangesRoot, "recovery_rate_scale");
     library.ranges.frontGravityScale = RequireRange(rangesRoot, "front_gravity_scale");

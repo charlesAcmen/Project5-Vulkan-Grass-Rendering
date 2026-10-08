@@ -130,6 +130,36 @@ namespace {
     void characterCallback(GLFWwindow* window, unsigned int codepoint) {
         renderer->OnCharacter(window, codepoint);
     }
+    //deltaSeconds is multiplied to make distance traveled independent of framerate.
+    void UpdateCameraMovement(GLFWwindow* window, float deltaSeconds) {
+        if (glfwGetWindowAttrib(window, GLFW_FOCUSED) != GLFW_TRUE
+            || renderer->WantsKeyboardCapture()) {
+            //unfocused
+            return;
+        }
+
+        glm::vec3 movement(0.0f);
+        //glfwGetKey is more suitable than the key callback for continuous movement
+        movement.z += glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS ? 1.0f : 0.0f;
+        movement.z -= glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS ? 1.0f : 0.0f;
+        movement.x += glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS ? 1.0f : 0.0f;
+        movement.x -= glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS ? 1.0f : 0.0f;
+        movement.y += glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS ? 1.0f : 0.0f;
+        movement.y -= (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS
+            || glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) ? 1.0f : 0.0f;
+
+        const float movementLength = glm::length(movement);
+        if (movementLength <= 0.0f) {
+            return;
+        }
+
+        const bool fastMovement = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+            || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+        const float speed = kCameraMoveSpeed
+            * (fastMovement ? kCameraFastMoveMultiplier : 1.0f);
+        //normalize the movement vector to avoid diagonal movement being faster than axis-aligned movement.
+        camera->MoveRelative((movement / movementLength) * speed * deltaSeconds);
+    }
 }
 
 namespace {

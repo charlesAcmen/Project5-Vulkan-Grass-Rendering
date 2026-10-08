@@ -71,11 +71,11 @@ ImGuiVulkanLayer::~ImGuiVulkanLayer() {
     ImGui::DestroyContext();
 }
 
-void ImGuiVulkanLayer::PrepareFrame(SimulationParameters& parameters, const CameraFrame& cameraFrame) {
+void ImGuiVulkanLayer::PrepareFrame(SimulationParameters& parameters, const CameraFrame& cameraFrame, const PerformanceMetrics& performanceMetrics) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    simulationPanel.Draw(parameters, cameraFrame);
+    simulationPanel.Draw(parameters, cameraFrame, performanceMetrics);
     ImGui::Render();
 }
 

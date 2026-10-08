@@ -16,7 +16,7 @@ public:
     ImGuiVulkanLayer(Device* device, SwapChain* swapChain, VkRenderPass renderPass, GLFWwindow* window, const SimulationPresetLibrary& presetLibrary);
     ~ImGuiVulkanLayer();
 
-    void PrepareFrame(SimulationParameters& parameters, const CameraFrame& cameraFrame);
+    void PrepareFrame(SimulationParameters& parameters, const CameraFrame& cameraFrame, const PerformanceMetrics& performanceMetrics);
     void RenderDrawData(VkCommandBuffer commandBuffer);
     void OnSwapChainRecreated(uint32_t imageCount);
 

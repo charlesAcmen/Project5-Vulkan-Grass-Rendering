@@ -219,16 +219,36 @@ int RunApplication() {
         { 0, 1, 2, 2, 3, 0 }
     );
     plane->SetTexture(grassImage);
-    
-    Blades* blades = new Blades(device, transferCommandPool, planeDim, DEFAULT_BLADE_COUNT);
-
-    vkDestroyCommandPool(device->GetVkDevice(), transferCommandPool, nullptr);
 
     Scene* scene = new Scene(device);
     scene->AddModel(plane);
-    scene->AddBlades(blades);
 
-    SimulationPresetLibrary presetLibrary = SimulationPresetLibrary::LoadFromExecutableDirectory();
+    std::vector<Blades*> bladePatches;
+    bladePatches.reserve(fieldConfig.activePatchCount);
+    for (uint32_t row = 0; row < fieldConfig.rows; ++row) {
+        for (uint32_t column = 0; column < fieldConfig.columns; ++column) {
+            const uint32_t bladeCount = fieldConfig.patchBladeCounts[row][column];
+            if (bladeCount == 0) {
+                continue;
+            }
+
+            // Matrix [0][0] is the field's top-left corner: columns advance
+            // along +X and rows advance along -Z. Centering the complete grid
+            // around the origin keeps terrain, camera navigation, and debug tools
+            // numerically symmetric.
+            const glm::vec2 patchCenter(
+                -halfWidth + (static_cast<float>(column) + 0.5f) * fieldConfig.patchSizeUnits,
+                 halfDepth - (static_cast<float>(row) + 0.5f) * fieldConfig.patchSizeUnits);
+            Blades* patch = new Blades(device, transferCommandPool,
+                fieldConfig.patchSizeUnits, patchCenter, bladeCount,
+                DerivePatchSeed(fieldConfig.randomSeed, row, column));
+            bladePatches.push_back(patch);
+            scene->AddBlades(patch);
+        }
+    }
+
+    vkDestroyCommandPool(device->GetVkDevice(), transferCommandPool, nullptr);
+
     presetLibrary.ApplySimulationPreset(presetLibrary.GetDefaultSimulationPreset(), scene->GetSimulationParameters());
     renderer = new Renderer(device, swapChain, scene, camera, presetLibrary);
 

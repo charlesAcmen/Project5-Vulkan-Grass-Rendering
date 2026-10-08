@@ -171,8 +171,38 @@ void SimulationPanel::DrawDirectionControl(const char* controlId, const char* ti
     ImGui::PopID();
 }
 
-void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame) {
+void SimulationPanel::DrawPerformancePanel(const PerformanceMetrics& performanceMetrics) {
+    if (!ImGui::CollapsingHeader("Performance", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return;
+    }
+
+    ImGui::TextUnformatted("Latest / rolling 120-frame average");
+    ImGui::Separator();
+    ImGui::Text("Producer FPS: %.1f / %.1f", performanceMetrics.latestProducerFramesPerSecond, performanceMetrics.averageProducerFramesPerSecond);
+    ImGui::Text("CPU frame: %.3f / %.3f ms", performanceMetrics.latestCpuFrameMilliseconds, performanceMetrics.averageCpuFrameMilliseconds);
+    ImGui::Text("CPU active: %.3f / %.3f ms", performanceMetrics.latestCpuActiveMilliseconds, performanceMetrics.averageCpuActiveMilliseconds);
+    ImGui::Text("Fence wait: %.3f / %.3f ms", performanceMetrics.latestFenceWaitMilliseconds, performanceMetrics.averageFenceWaitMilliseconds);
+
+    if (performanceMetrics.gpuTimingsAvailable) {
+        ImGui::Text("GPU total: %.3f / %.3f ms", performanceMetrics.latestGpuTotalMilliseconds, performanceMetrics.averageGpuTotalMilliseconds);
+        ImGui::Text("GPU compute: %.3f / %.3f ms", performanceMetrics.latestGpuComputeMilliseconds, performanceMetrics.averageGpuComputeMilliseconds);
+        ImGui::Text("GPU graphics: %.3f / %.3f ms", performanceMetrics.latestGpuGraphicsMilliseconds, performanceMetrics.averageGpuGraphicsMilliseconds);
+        ImGui::Text("GPU grass: %.3f / %.3f ms", performanceMetrics.latestGpuGrassMilliseconds, performanceMetrics.averageGpuGrassMilliseconds);
+    } else {
+        ImGui::TextDisabled("GPU timestamps become available after the first completed frame.");
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Input blades: %llu", static_cast<unsigned long long>(performanceMetrics.inputBladeCount));
+    ImGui::Text("Direct draw blades: %llu", static_cast<unsigned long long>(performanceMetrics.directDrawBladeCount));
+    ImGui::TextDisabled("Orientation / frustum / distance / indirect counts: Phase 3 not enabled.");
+    ImGui::TextDisabled("Validation builds serialize swap-chain acquisition; use a Release capture for final CPU or fence conclusions.");
+}
+
+void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame, const PerformanceMetrics& performanceMetrics) {
     ImGui::Begin("Grass Simulation");
+
+    DrawPerformancePanel(performanceMetrics);
 
     // Layout values are intentionally read-only at runtime. Changing any of
     // them would require rebuilding blade buffers, descriptor sets, dispatches,

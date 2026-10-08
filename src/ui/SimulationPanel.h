@@ -36,6 +36,7 @@ private:
         glm::vec3& direction,
         const CameraFrame& cameraFrame
     );
+    void DrawPerformancePanel(const PerformanceMetrics& performanceMetrics);
 
     const SimulationPresetLibrary& presetLibrary;
     DirectionTrackballState windDirectionState;

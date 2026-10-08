@@ -124,6 +124,16 @@ int RunApplication() {
 
     swapChain = device->CreateSwapChain(surface, 5);
 
+    // Scene topology is startup-only data. Load it before creating the camera,
+    // terrain, blade buffers, descriptor sets, or recorded command buffers.
+    SimulationPresetLibrary presetLibrary = SimulationPresetLibrary::LoadFromExecutableDirectory();
+    const GrassFieldConfig& fieldConfig = presetLibrary.GetGrassFieldConfig();
+    const float fieldWidth = fieldConfig.patchSizeUnits * static_cast<float>(fieldConfig.columns);
+    const float fieldDepth = fieldConfig.patchSizeUnits * static_cast<float>(fieldConfig.rows);
+    if (!std::isfinite(fieldWidth) || !std::isfinite(fieldDepth)) {
+        throw std::runtime_error("Grass field dimensions exceed the supported floating-point range");
+    }
+
     const VkExtent2D initialExtent = swapChain->GetVkExtent();
     camera = new Camera(device, static_cast<float>(initialExtent.width) / static_cast<float>(initialExtent.height));
 

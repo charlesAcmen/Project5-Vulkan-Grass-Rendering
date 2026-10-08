@@ -211,10 +211,10 @@ int RunApplication() {
     const float textureRows = static_cast<float>(fieldConfig.rows);
     Model* plane = new Model(device, transferCommandPool,
         {
-            { { -halfWidth, 0.0f, halfWidth }, { 1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f } },
-            { { halfWidth, 0.0f, halfWidth }, { 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f } },
-            { { halfWidth, 0.0f, -halfWidth }, { 0.0f, 0.0f, 1.0f },{ 0.0f, 1.0f } },
-            { { -halfWidth, 0.0f, -halfWidth }, { 1.0f, 1.0f, 1.0f },{ 1.0f, 1.0f } }
+            { { -halfWidth, 0.0f,  halfDepth }, { 1.0f, 0.0f, 0.0f }, { 0.0f,           0.0f } },
+            { {  halfWidth, 0.0f,  halfDepth }, { 0.0f, 1.0f, 0.0f }, { textureColumns, 0.0f } },
+            { {  halfWidth, 0.0f, -halfDepth }, { 0.0f, 0.0f, 1.0f }, { textureColumns, textureRows } },
+            { { -halfWidth, 0.0f, -halfDepth }, { 1.0f, 1.0f, 1.0f }, { 0.0f,           textureRows } }
         },
         { 0, 1, 2, 2, 3, 0 }
     );

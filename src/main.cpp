@@ -106,7 +106,7 @@ namespace {
             // dragging upward pitches the free-look camera upward.
             float deltaY = static_cast<float>((previousY - yPosition) * sensitivity);
 
-            camera->UpdateOrbit(deltaX, deltaY, 0.0f);
+            camera->Rotate(deltaX, deltaY);
 
             previousX = xPosition;
             previousY = yPosition;

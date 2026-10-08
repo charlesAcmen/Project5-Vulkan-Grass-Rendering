@@ -99,8 +99,8 @@ namespace {
 
 int RunApplication() {
     static constexpr char* applicationName = "Vulkan Grass Rendering";
-    static constexpr int initialWindowWidth = 1280;
-    static constexpr int initialWindowHeight = 720;
+    static constexpr int initialWindowWidth = 1920;
+    static constexpr int initialWindowHeight = 1080;
     InitializeWindow(initialWindowWidth, initialWindowHeight, applicationName);
 
     unsigned int glfwExtensionCount = 0;

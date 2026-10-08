@@ -111,9 +111,9 @@ namespace {
             previousX = xPosition;
             previousY = yPosition;
         } else if (rightMouseDown) {
-            double deltaZ = static_cast<float>((previousY - yPosition) * 0.05);
+            const float deltaZ = static_cast<float>((previousY - yPosition) * 0.05);
 
-            camera->UpdateOrbit(0.0f, 0.0f, deltaZ);
+            camera->MoveRelative(glm::vec3(0.0f, 0.0f, deltaZ));
 
             previousY = yPosition;
         }

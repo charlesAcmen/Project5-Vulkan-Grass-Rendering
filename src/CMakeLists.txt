@@ -26,6 +26,8 @@ set(SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/scene/Vertex.h
     ${CMAKE_CURRENT_SOURCE_DIR}/render/Renderer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/render/Renderer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/render/PerformanceProfiler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/render/PerformanceProfiler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationParameters.h
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationPresetLibrary.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/simulation/SimulationPresetLibrary.h

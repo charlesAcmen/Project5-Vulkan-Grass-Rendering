@@ -1,7 +1,11 @@
 #include <vulkan/vulkan.h>
 #include <cstdio>
 #include <cstdlib>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <exception>
+#include <vector>
 #include "Instance.h"
 #include "Window.h"
 #include "render/Renderer.h"
@@ -16,6 +20,39 @@ Renderer* renderer;
 Camera* camera;
 
 namespace {
+    constexpr float kCameraMoveSpeed = 12.0f;
+    constexpr float kCameraFastMoveMultiplier = 4.0f;
+    constexpr float kMaximumMovementDeltaSeconds = 0.1f;
+
+    uint32_t DerivePatchSeed(uint32_t baseSeed, uint32_t row, uint32_t column) {
+        // Mix grid coordinates independently so changing one JSON cell does
+        // not reshuffle the deterministic grass distribution in other cells.
+        uint32_t value = baseSeed ^ (row + 1u) * 0x9E3779B9u;
+        value ^= (column + 1u) * 0x85EBCA6Bu;
+        value ^= value >> 16;
+        value *= 0x7FEB352Du;
+        value ^= value >> 15;
+        return value;
+    }
+
+    CameraConfiguration CreateFieldCameraConfiguration(float fieldWidth, float fieldDepth, float patchSizeUnits) {
+        const float diagonal = std::sqrt(fieldWidth * fieldWidth + fieldDepth * fieldDepth);
+        const float cornerMargin = patchSizeUnits * 0.5f;
+        const glm::vec3 target(0.0f, 1.0f, 0.0f);
+        const glm::vec3 position(
+            -fieldWidth * 0.5f - cornerMargin,
+            std::max(5.0f, diagonal * 0.2f),
+            fieldDepth * 0.5f + cornerMargin);
+        const float initialDistance = glm::length(position - target);
+
+        CameraConfiguration configuration = {};
+        configuration.position = position;
+        configuration.target = target;
+        configuration.nearPlane = 0.1f;
+        configuration.farPlane = std::max(100.0f, 2.0f * initialDistance + diagonal);
+        return configuration;
+    }
+
     void resizeCallback(GLFWwindow* window, int width, int height) {
         if (width == 0 || height == 0) return;
 

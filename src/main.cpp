@@ -289,8 +289,15 @@ int RunApplication() {
     glfwSetKeyCallback(GetGLFWWindow(), keyCallback);
     glfwSetCharCallback(GetGLFWWindow(), characterCallback);
 
+    double previousFrameTime = glfwGetTime();
     while (!ShouldQuit()) {
         glfwPollEvents();
+        const double currentFrameTime = glfwGetTime();
+        const float deltaSeconds = static_cast<float>(std::min(
+            currentFrameTime - previousFrameTime,
+            static_cast<double>(kMaximumMovementDeltaSeconds)));
+        previousFrameTime = currentFrameTime;
+        UpdateCameraMovement(GetGLFWWindow(), deltaSeconds);
         renderer->Frame();
     }
 

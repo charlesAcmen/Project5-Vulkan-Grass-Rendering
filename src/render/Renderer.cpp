@@ -1105,6 +1105,10 @@ void Renderer::RecordComputeCommandBuffer() {
         throw std::runtime_error("Failed to begin recording compute command buffer");
     }
 
+#ifndef NDEBUG
+    performanceProfiler->RecordComputeBegin(computeCommandBuffer);
+#endif
+
     // Bind to the compute pipeline
     vkCmdBindPipeline(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
 
@@ -1121,6 +1125,10 @@ void Renderer::RecordComputeCommandBuffer() {
         const uint32_t bladeCount = scene->GetBlades()[i]->GetBladeCount();
         vkCmdDispatch(computeCommandBuffer, (bladeCount + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE, 1, 1);
     }
+
+#ifndef NDEBUG
+    performanceProfiler->RecordComputeEnd(computeCommandBuffer);
+#endif
 
     // ~ End recording ~
     if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS) {
@@ -1167,6 +1175,10 @@ void Renderer::RecordCommandBuffer(uint32_t imageIndex) {
         throw std::runtime_error("Failed to begin recording command buffer");
     }
 
+#ifndef NDEBUG
+    performanceProfiler->RecordGraphicsBegin(commandBuffer);
+#endif
+
     // Begin the render pass
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1207,6 +1219,9 @@ void Renderer::RecordCommandBuffer(uint32_t imageIndex) {
 
     // Bind the grass pipeline
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, grassPipeline);
+#ifndef NDEBUG
+    performanceProfiler->RecordGrassBegin(commandBuffer);
+#endif
 
     for (uint32_t j = 0; j < scene->GetBlades().size(); ++j) {
         // Phase 1 draws every source blade directly. Phase 3 replaces this with visible-buffer indirect drawing.
@@ -1222,6 +1237,9 @@ void Renderer::RecordCommandBuffer(uint32_t imageIndex) {
         // TODO: Uncomment this when the buffers are populated
         // vkCmdDrawIndirect(commandBuffer, scene->GetBlades()[j]->GetNumBladesBuffer(), 0, 1, sizeof(BladeDrawIndirect));
     }
+#ifndef NDEBUG
+    performanceProfiler->RecordGrassEnd(commandBuffer);
+#endif
 
     // The overlay exists only in non-Release builds. It is deliberately
     // omitted from Release command buffers, leaving only the terrain and grass.
@@ -1231,6 +1249,9 @@ void Renderer::RecordCommandBuffer(uint32_t imageIndex) {
 
     // End render pass
     vkCmdEndRenderPass(commandBuffer);
+#ifndef NDEBUG
+    performanceProfiler->RecordGraphicsEnd(commandBuffer);
+#endif
 
     // ~ End recording ~
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -1239,19 +1260,29 @@ void Renderer::RecordCommandBuffer(uint32_t imageIndex) {
 }
 
 void Renderer::Frame() {
+#ifndef NDEBUG
+    performanceProfiler->BeginFrame();
+#endif
     if (vkWaitForFences(logicalDevice, 1, &inFlightFence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
         throw std::runtime_error("Failed to wait for the in-flight fence");
     }
+#ifndef NDEBUG
+    performanceProfiler->EndFenceWait();
+    performanceProfiler->CollectCompletedGpuFrame();
+#endif
 
     if (!swapChain->Acquire()) {
         RecreateSwapChainResources();
+#ifndef NDEBUG
+        performanceProfiler->EndFrame();
+#endif
         return;
     }
 
     // UI events have already been collected by GLFW. In non-Release builds,
     // build the panel before uploading the UBO so edits affect this dispatch.
     if (uiLayer != nullptr) {
-        uiLayer->PrepareFrame(scene->GetSimulationParameters(), camera->GetFrame());
+        uiLayer->PrepareFrame(scene->GetSimulationParameters(), camera->GetFrame(), performanceProfiler->GetMetrics());
     }
 
     // Time and UI controls share one mapped UBO. The completed frame fence
@@ -1305,10 +1336,16 @@ void Renderer::Frame() {
     if (vkQueueSubmit(device->GetQueue(QueueFlags::Graphics), 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
+#ifndef NDEBUG
+    performanceProfiler->MarkGpuFrameSubmitted();
+#endif
 
     if (!swapChain->Present()) {
         RecreateSwapChainResources();
     }
+#ifndef NDEBUG
+    performanceProfiler->EndFrame();
+#endif
 }
 
 Renderer::~Renderer() {

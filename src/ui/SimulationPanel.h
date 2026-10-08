@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "scene/Camera.h"
+#include "render/PerformanceProfiler.h"
 #include "simulation/SimulationParameters.h"
 #include "simulation/SimulationPresetLibrary.h"
 
@@ -13,7 +14,7 @@ class SimulationPanel {
 public:
     explicit SimulationPanel(const SimulationPresetLibrary& presetLibrary);
 
-    void Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame);
+    void Draw(SimulationParameters& parameters, const CameraFrame& cameraFrame, const PerformanceMetrics& performanceMetrics);
 
 private:
     struct DirectionTrackballState {

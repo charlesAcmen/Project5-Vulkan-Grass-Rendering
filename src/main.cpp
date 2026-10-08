@@ -202,8 +202,13 @@ int RunApplication() {
         grassImageMemory
     );
 
-    float planeDim = 15.f;
-    float halfWidth = planeDim * 0.5f;
+    const float halfWidth = fieldWidth * 0.5f;
+    const float halfDepth = fieldDepth * 0.5f;
+    // Texture coordinates repeat once per logical patch. Enlarging the field
+    // therefore preserves the existing ground texture scale instead of
+    // stretching one copy across the complete grid.
+    const float textureColumns = static_cast<float>(fieldConfig.columns);
+    const float textureRows = static_cast<float>(fieldConfig.rows);
     Model* plane = new Model(device, transferCommandPool,
         {
             { { -halfWidth, 0.0f, halfWidth }, { 1.0f, 0.0f, 0.0f },{ 1.0f, 0.0f } },

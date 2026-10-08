@@ -172,7 +172,11 @@ int RunApplication() {
     }
 
     const VkExtent2D initialExtent = swapChain->GetVkExtent();
-    camera = new Camera(device, static_cast<float>(initialExtent.width) / static_cast<float>(initialExtent.height));
+    const CameraConfiguration cameraConfiguration = CreateFieldCameraConfiguration(
+        fieldWidth, fieldDepth, fieldConfig.patchSizeUnits);
+    camera = new Camera(device,
+        static_cast<float>(initialExtent.width) / static_cast<float>(initialExtent.height),
+        cameraConfiguration);
 
     VkCommandPoolCreateInfo transferPoolInfo = {};
     transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

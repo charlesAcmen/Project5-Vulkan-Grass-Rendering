@@ -92,18 +92,43 @@ void main() {
     float tipDistance = max(length(rootToTip), 0.0001);
     float uprightHeightRatio = clamp(dot(rootToTip, up) / height, 0.0, 1.0);
 
-    // Primary and secondary gusts are the two wind-field contributors. Their
-    // positive envelopes are added together, so neither can subtract the
-    // other. When both gust amplitudes are zero, the wind force is zero;
-    // windDirectionAndFieldScale.w only scales their combined result.
-    float primaryPhase = sin(dot(root.xz, simulation.windWaveNumbers.xy) - simulation.timeAndDeformationScales.y * simulation.windAmplitudesAndAngularSpeeds.z);
-    float secondaryPhase = sin(root.x * simulation.windWaveNumbers.z + simulation.timeAndDeformationScales.y * simulation.windAmplitudesAndAngularSpeeds.w);
-    float primaryWindContribution = max(simulation.windAmplitudesAndAngularSpeeds.x, 0.0) * 0.5 * (primaryPhase + 1.0);
-    float secondaryWindContribution = max(simulation.windAmplitudesAndAngularSpeeds.y, 0.0) * 0.5 * (secondaryPhase + 1.0);
-    float windDisplacementRate = max(simulation.windDirectionAndFieldScale.w, 0.0)
-        * (primaryWindContribution + secondaryWindContribution);
+    // Both gust fields are positive [0, 1] samples, so Primary and Secondary
+    // can only add. Setting both amplitudes to zero still removes wind fully.
     vec3 configuredWindDirection = simulation.windDirectionAndFieldScale.xyz;
     float windDirectionLength = length(configuredWindDirection);
+    vec2 horizontalWindDirection = configuredWindDirection.xz;
+    float horizontalWindLength = length(horizontalWindDirection);
+    vec2 gustTravelDirection = horizontalWindLength > 0.0001
+        ? horizontalWindDirection / horizontalWindLength
+        : vec2(0.0);
+
+    // F(p - v*t) transports visible gust features in +v. A purely vertical
+    // wind has no ground-plane component, so its field remains spatially
+    // varied but does not advect over XZ.
+    vec2 primaryWorldSamplePosition = root.xz - gustTravelDirection
+        * simulation.timeAndDeformationScales.y * max(simulation.windAmplitudesAndAdvectionSpeeds.z, 0.0);
+    // The CPU stores each isotropic field scale in both components of its XZ
+    // pair to preserve the SimulationParameters ABI.
+    //xx:copy x twice to form a vec2 for the primary field scale
+    vec2 primaryUV = primaryWorldSamplePosition * max(simulation.windFieldSpatialScales.xx, vec2(0.0));
+
+    vec2 secondaryWorldSamplePosition = root.xz - gustTravelDirection
+        * simulation.timeAndDeformationScales.y * max(simulation.windAmplitudesAndAdvectionSpeeds.w, 0.0);
+    // A fixed rotation makes the two channels decorrelate spatially even when
+    // their user-selected scales happen to be similar.
+    //[ 0.8  -0.6 ]
+    //[ 0.6   0.8 ]
+    vec2 secondaryRotatedPosition = vec2(
+        0.80 * secondaryWorldSamplePosition.x - 0.60 * secondaryWorldSamplePosition.y,
+        0.60 * secondaryWorldSamplePosition.x + 0.80 * secondaryWorldSamplePosition.y
+    );
+    vec2 secondaryUV = secondaryRotatedPosition * max(simulation.windFieldSpatialScales.zz, vec2(0.0));
+    float primaryGust = texture(gustField, primaryUV).r;
+    float secondaryGust = texture(gustField, secondaryUV).g;
+    float primaryWindContribution = max(simulation.windAmplitudesAndAdvectionSpeeds.x, 0.0) * primaryGust;
+    float secondaryWindContribution = max(simulation.windAmplitudesAndAdvectionSpeeds.y, 0.0) * secondaryGust;
+    float windDisplacementRate = max(simulation.windDirectionAndFieldScale.w, 0.0)
+        * (primaryWindContribution + secondaryWindContribution);
     vec3 windBendRate = vec3(0.0);
     if (windDisplacementRate > 0.0001 && windDirectionLength > 0.0001) {
         vec3 windDisplacementRateVector = configuredWindDirection / windDirectionLength * windDisplacementRate;

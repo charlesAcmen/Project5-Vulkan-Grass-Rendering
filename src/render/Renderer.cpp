@@ -38,6 +38,11 @@ Renderer::Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* c
     CreateGrassPipeline();
     CreateComputePipeline();
 #ifndef NDEBUG
+    uint64_t inputBladeCount = 0;
+    for (Blades* blades : scene->GetBlades()) {
+        inputBladeCount += blades->GetBladeCount();
+    }
+    performanceProfiler = std::make_unique<PerformanceProfiler>(device, inputBladeCount);
     uiLayer = new ImGuiVulkanLayer(device, swapChain, renderPass, GetGLFWWindow(), presetLibrary);
 #endif
     RecordCommandBuffers();

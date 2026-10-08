@@ -1,11 +1,14 @@
 #pragma once
 
+#include <memory>
+
 #include "Device.h"
 #include "SwapChain.h"
 #include "scene/Scene.h"
 #include "scene/Camera.h"
 #include "simulation/SimulationPresetLibrary.h"
 #include "simulation/WindField.h"
+#include "render/PerformanceProfiler.h"
 #include "ui/ImGuiVulkanLayer.h"
 
 class Renderer {
@@ -64,6 +67,7 @@ private:
     Scene* scene;
     Camera* camera;
     WindField* windField = nullptr;
+    std::unique_ptr<PerformanceProfiler> performanceProfiler;
 
     VkCommandPool graphicsCommandPool;
     VkCommandPool computeCommandPool;

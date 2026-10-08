@@ -303,14 +303,18 @@ int RunApplication() {
 
     vkDeviceWaitIdle(device->GetVkDevice());
 
-    vkDestroyImage(device->GetVkDevice(), grassImage, nullptr);
-    vkFreeMemory(device->GetVkDevice(), grassImageMemory, nullptr);
-
+    // Renderer-owned descriptor sets must die before the buffers referenced by
+    // those sets. Likewise the plane destroys its texture view before the
+    // underlying image allocation is released.
+    delete renderer;
     delete scene;
     delete plane;
-    delete blades;
+    for (Blades* patch : bladePatches) {
+        delete patch;
+    }
     delete camera;
-    delete renderer;
+    vkDestroyImage(device->GetVkDevice(), grassImage, nullptr);
+    vkFreeMemory(device->GetVkDevice(), grassImageMemory, nullptr);
     delete swapChain;
     delete device;
     vkDestroySurfaceKHR(instance->GetVkInstance(), surface, nullptr);

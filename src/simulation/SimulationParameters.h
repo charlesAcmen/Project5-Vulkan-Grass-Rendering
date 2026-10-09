@@ -29,6 +29,10 @@ struct alignas(16) SimulationParameters {
     // so this value is intentionally not an SI gravity value such as 9.81 m/s^2.
     glm::vec4 gravityDirectionAndPullRate;
 
+    // x = absolute ribbon-facing alignment threshold, y = enabled (0 or 1).
+    // z/w are reserved for the later frustum and distance-culling stages.
+    glm::vec4 orientationCullingParameters;
+
     SimulationParameters()
         // This visual-natural preset assumes the existing scene-unit scale. It
         // is not a calibrated real-world grass/material configuration.
@@ -38,14 +42,16 @@ struct alignas(16) SimulationParameters {
           // deliberately removes wind, while the final component scales them.
           windAmplitudesAndAdvectionSpeeds(0.55f, 0.25f, 1.20f, 0.45f),
           windFieldSpatialScales(0.020f, 0.020f, 0.014f, 0.014f),
-          gravityDirectionAndPullRate(0.0f, -1.0f, 0.0f, 0.90f) {
+          gravityDirectionAndPullRate(0.0f, -1.0f, 0.0f, 0.90f),
+          orientationCullingParameters(0.90f, 1.0f, 0.0f, 0.0f) {
     }
 };
 
 static_assert(sizeof(glm::vec4) == 16, "Simulation UBO assumes 16-byte vec4 values");
-static_assert(sizeof(SimulationParameters) == 5 * sizeof(glm::vec4), "Simulation UBO must occupy five std140 vec4 slots");
+static_assert(sizeof(SimulationParameters) == 6 * sizeof(glm::vec4), "Simulation UBO must occupy six std140 vec4 slots");
 static_assert(offsetof(SimulationParameters, timeAndDeformationScales) == 0, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windDirectionAndFieldScale) == 16, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windAmplitudesAndAdvectionSpeeds) == 32, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windFieldSpatialScales) == 48, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, gravityDirectionAndPullRate) == 64, "Unexpected SimulationParameters offset");
+static_assert(offsetof(SimulationParameters, orientationCullingParameters) == 80, "Unexpected SimulationParameters offset");

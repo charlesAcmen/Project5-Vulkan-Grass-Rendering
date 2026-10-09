@@ -21,6 +21,7 @@ namespace {
     public:
         enum class Type {
             Number,
+            Boolean,
             String,
             Array,
             Object
@@ -28,6 +29,7 @@ namespace {
 
         Type type = Type::Object;
         double number = 0.0;
+        bool boolean = false;
         std::string string;
         std::vector<JsonValue> array;
         std::map<std::string, JsonValue> object;
@@ -89,6 +91,13 @@ namespace {
                 value.string = ParseString();
                 return value;
             }
+            if (text.compare(cursor, 4, "true") == 0 || text.compare(cursor, 5, "false") == 0) {
+                JsonValue value;
+                value.type = JsonValue::Type::Boolean;
+                value.boolean = text.compare(cursor, 4, "true") == 0;
+                cursor += value.boolean ? 4 : 5;
+                return value;
+            }
             if (text[cursor] == '-' || std::isdigit(static_cast<unsigned char>(text[cursor]))) {
                 JsonValue value;
                 value.type = JsonValue::Type::Number;
@@ -96,7 +105,7 @@ namespace {
                 return value;
             }
 
-            Fail("only objects, arrays, strings, and numbers are supported");
+            Fail("only objects, arrays, strings, numbers, and booleans are supported");
         }
 
         JsonValue ParseObject() {
@@ -227,6 +236,14 @@ namespace {
         return static_cast<float>(value.number);
     }
 
+    bool RequireBoolean(const JsonValue& object, const char* name) {
+        const JsonValue& value = RequireMember(object, name);
+        if (value.type != JsonValue::Type::Boolean) {
+            throw std::runtime_error(std::string("Simulation preset field must be a boolean: ") + name);
+        }
+        return value.boolean;
+    }
+
     uint32_t RequireUnsignedInteger(const JsonValue& object, const char* name, bool allowZero = false) {
         const JsonValue& value = RequireMember(object, name);
         const double number = value.number;
@@ -331,6 +348,12 @@ namespace {
         preset.parameters.gravityDirectionAndPullRate = glm::vec4(gravityDirection, RequireNumber(root, "gravity_pull_rate"));
         preset.parameters.timeAndDeformationScales.z = RequireNumber(root, "recovery_rate_scale");
         preset.parameters.timeAndDeformationScales.w = RequireNumber(root, "front_gravity_scale");
+        preset.parameters.orientationCullingParameters = glm::vec4(
+            RequireNumber(root, "orientation_alignment_threshold"),
+            RequireBoolean(root, "orientation_culling_enabled") ? 1.0f : 0.0f,
+            0.0f,
+            0.0f
+        );
         return preset;
     }
 
@@ -439,6 +462,7 @@ SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {
     library.ranges.gravityPullRate = RequireRange(rangesRoot, "gravity_pull_rate");
     library.ranges.recoveryRateScale = RequireRange(rangesRoot, "recovery_rate_scale");
     library.ranges.frontGravityScale = RequireRange(rangesRoot, "front_gravity_scale");
+    library.ranges.orientationAlignmentThreshold = RequireRange(rangesRoot, "orientation_alignment_threshold");
 
     const char* simulationFiles[] = { "calm.json", "breezy.json", "strong-wind.json", "stress-test.json" };
     for (size_t i = 0; i < sizeof(simulationFiles) / sizeof(simulationFiles[0]); ++i) {

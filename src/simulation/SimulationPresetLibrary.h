@@ -24,6 +24,7 @@ struct SimulationControlRanges {
     SimulationSliderRange gravityPullRate;
     SimulationSliderRange recoveryRateScale;
     SimulationSliderRange frontGravityScale;
+    SimulationSliderRange orientationAlignmentThreshold;
 };
 
 struct SimulationPreset {

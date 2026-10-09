@@ -7,6 +7,7 @@ layout(local_size_x = WORKGROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 layout(set = 0, binding = 0) uniform CameraBufferObject {
     mat4 view;
     mat4 proj;
+    vec4 cameraPosition;
 } camera;
 
 layout(std140, set = 1, binding = 0) uniform SimulationParameters {

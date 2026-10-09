@@ -84,6 +84,7 @@ void Camera::UpdateViewMatrix() {
         horizontalScale * std::cos(radYaw));
     cameraBufferObject.viewMatrix = glm::lookAt(
         position, position + forward, glm::vec3(0.0f, 1.0f, 0.0f));
+    cameraBufferObject.cameraPosition = glm::vec4(position, 1.0f);
 }
 
 void Camera::UpdateProjectionMatrix(float aspectRatio) {

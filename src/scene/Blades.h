@@ -9,19 +9,22 @@
 // Historical single-field workload retained as a useful density reference.
 // Startup scene configuration now supplies each patch's actual blade count.
 constexpr static uint32_t DEFAULT_BLADE_COUNT = 1 << 13;
-constexpr static float MIN_HEIGHT = 1.3f;
-constexpr static float MAX_HEIGHT = 2.5f;
-constexpr static float MIN_WIDTH = 0.1f;
-constexpr static float MAX_WIDTH = 0.14f;
+// World space uses meters. These values intentionally describe tall grass or
+// crop leaves rather than a short lawn; changing them changes scene geometry.
+constexpr static float MIN_HEIGHT_METERS = 1.3f;
+constexpr static float MAX_HEIGHT_METERS = 2.5f;
+constexpr static float MIN_WIDTH_METERS = 0.1f;
+constexpr static float MAX_WIDTH_METERS = 0.14f;
+// Recovery is a first-order return rate in inverse seconds, not stiffness in N/m.
 constexpr static float MIN_RECOVERY_RATE = 7.0f;
 constexpr static float MAX_RECOVERY_RATE = 13.0f;
 //add alignment
 struct alignas(16) Blade {
     // Position and direction
     glm::vec4 v0;
-    // Bezier point and height
+    // Bezier point and height in meters
     glm::vec4 v1;
-    // Physical model guide and width
+    // Physical model guide and width in meters
     glm::vec4 v2;
     // Up vector and per-blade recovery rate
     glm::vec4 up;
@@ -109,7 +112,7 @@ public:
     // patchCenterXZ is baked into every control point in world space. Compute
     // physics, graphics, and future culling therefore agree on patch location
     // without requiring a graphics-only model transform.
-    Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
+    Blades(Device* device, VkCommandPool commandPool, float patchSizeMeters,
         const glm::vec2& patchCenterXZ, uint32_t bladeCount, uint32_t randomSeed);
     uint32_t GetBladeCount() const;
     VkBuffer GetSourceBladesBuffer() const;

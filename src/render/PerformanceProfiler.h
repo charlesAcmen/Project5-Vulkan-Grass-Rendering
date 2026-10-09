@@ -14,7 +14,10 @@ struct PerformanceMetrics {
     bool gpuTimingsAvailable = false;
 
     uint64_t inputBladeCount = 0;
-    uint64_t directDrawBladeCount = 0;
+    uint64_t simulatedBladeCount = 0;
+    uint64_t orientationVisibleBladeCount = 0;
+    uint64_t orientationCulledBladeCount = 0;
+    uint64_t indirectDrawBladeCount = 0;
 
     double latestProducerFramesPerSecond = 0.0;
     double averageProducerFramesPerSecond = 0.0;
@@ -53,6 +56,7 @@ public:
     void CollectCompletedGpuFrame();
     void MarkGpuFrameSubmitted();
     void EndFrame();
+    void SetOrientationCullingCounts(uint64_t orientationVisibleBladeCount);
 
     void RecordComputeBegin(VkCommandBuffer commandBuffer);
     void RecordComputeEnd(VkCommandBuffer commandBuffer);

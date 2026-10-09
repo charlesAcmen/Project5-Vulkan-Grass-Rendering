@@ -87,7 +87,9 @@ PerformanceProfiler::PerformanceProfiler(Device* device, uint64_t inputBladeCoun
     logicalDevice(device->GetVkDevice()),
     impl(std::make_unique<Impl>(kRollingWindowSize)) {
     metrics.inputBladeCount = inputBladeCount;
-    metrics.directDrawBladeCount = inputBladeCount;
+    metrics.simulatedBladeCount = inputBladeCount;
+    metrics.orientationVisibleBladeCount = inputBladeCount;
+    metrics.indirectDrawBladeCount = inputBladeCount;
 
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(device->GetInstance()->GetPhysicalDevice(), &properties);
@@ -166,6 +168,14 @@ void PerformanceProfiler::MarkGpuFrameSubmitted() {
 void PerformanceProfiler::EndFrame() {
     const double cpuFrameMilliseconds = MillisecondsBetween(impl->frameStart, Clock::now());
     AddSample({ cpuFrameMilliseconds, impl->currentFenceWaitMilliseconds });
+}
+
+void PerformanceProfiler::SetOrientationCullingCounts(uint64_t orientationVisibleBladeCount) {
+    const uint64_t clampedVisibleCount = std::min(orientationVisibleBladeCount, metrics.inputBladeCount);
+    metrics.simulatedBladeCount = metrics.inputBladeCount;
+    metrics.orientationVisibleBladeCount = clampedVisibleCount;
+    metrics.orientationCulledBladeCount = metrics.inputBladeCount - clampedVisibleCount;
+    metrics.indirectDrawBladeCount = clampedVisibleCount;
 }
 
 void PerformanceProfiler::RecordComputeBegin(VkCommandBuffer commandBuffer) {

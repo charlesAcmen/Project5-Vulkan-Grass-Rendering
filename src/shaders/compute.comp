@@ -53,12 +53,6 @@ bool inBounds(float value, float bounds) {
 }
 
 void main() {
-	// Reset the number of blades to 0
-	if (gl_GlobalInvocationID.x == 0) {
-		// numBlades.vertexCount = 0;
-	}
-	barrier(); // Wait till all threads reach this point
-
     // TODO: Apply forces on every blade and update the vertices in the buffer
     uint bladeIndex = gl_GlobalInvocationID.x;
     if (bladeIndex >= sourceBlades.blades.length()) {

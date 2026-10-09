@@ -58,7 +58,9 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeMeters,
     const VkDeviceSize bladeBufferSize = static_cast<VkDeviceSize>(bladeCount) * sizeof(Blade);
     BufferUtils::CreateBufferFromData(device, commandPool, blades.data(), bladeBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sourceBladesBuffer, sourceBladesBufferMemory);
     BufferUtils::CreateBuffer(device, bladeBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, visibleBladesBuffer, visibleBladesBufferMemory);
-    BufferUtils::CreateBufferFromData(device, commandPool, &indirectDraw, sizeof(BladeDrawIndirect), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, indirectDrawBuffer, indirectDrawBufferMemory);
+    BufferUtils::CreateBufferFromData(device, commandPool, &indirectDraw, sizeof(BladeDrawIndirect), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+            | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        indirectDrawBuffer, indirectDrawBufferMemory);
 }
 
 VkBuffer Blades::GetSourceBladesBuffer() const {

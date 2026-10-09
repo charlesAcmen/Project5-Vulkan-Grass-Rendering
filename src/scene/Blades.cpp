@@ -3,7 +3,7 @@
 #include "Blades.h"
 #include "BufferUtils.h"
 
-Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
+Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeMeters,
     const glm::vec2& patchCenterXZ, uint32_t bladeCount, uint32_t randomSeed)
     : Model(device, commandPool, {}, {}), bladeCount(bladeCount) {
     std::vector<Blade> blades;
@@ -26,19 +26,19 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeUnits,
         // Generate the root directly in world space. Row/column placement is
         // deliberately resolved on the CPU so compute wind and culling never
         // see every patch stacked around the local origin.
-        float x = patchCenterXZ.x + (generateRandomFloat() - 0.5f) * patchSizeUnits;
+        float x = patchCenterXZ.x + (generateRandomFloat() - 0.5f) * patchSizeMeters;
         float y = 0.0f;
-        float z = patchCenterXZ.y + (generateRandomFloat() - 0.5f) * patchSizeUnits;
+        float z = patchCenterXZ.y + (generateRandomFloat() - 0.5f) * patchSizeMeters;
         float direction = generateRandomFloat() * 2.f * 3.14159265f;
         glm::vec3 bladePosition(x, y, z);
         currentBlade.v0 = glm::vec4(bladePosition, direction);
 
         // Bezier point and height (v1)
-        float height = MIN_HEIGHT + (generateRandomFloat() * (MAX_HEIGHT - MIN_HEIGHT));
+        float height = MIN_HEIGHT_METERS + (generateRandomFloat() * (MAX_HEIGHT_METERS - MIN_HEIGHT_METERS));
         currentBlade.v1 = glm::vec4(bladePosition + bladeUp * height, height);
 
         // Physical model guide and width (v2)
-        float width = MIN_WIDTH + (generateRandomFloat() * (MAX_WIDTH - MIN_WIDTH));
+        float width = MIN_WIDTH_METERS + (generateRandomFloat() * (MAX_WIDTH_METERS - MIN_WIDTH_METERS));
         currentBlade.v2 = glm::vec4(bladePosition + bladeUp * height, width);
 
         // Up vector and per-blade recovery rate (up)

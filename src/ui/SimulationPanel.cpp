@@ -194,8 +194,16 @@ void SimulationPanel::DrawPerformancePanel(const PerformanceMetrics& performance
 
     ImGui::Separator();
     ImGui::Text("Input blades: %llu", static_cast<unsigned long long>(performanceMetrics.inputBladeCount));
-    ImGui::Text("Direct draw blades: %llu", static_cast<unsigned long long>(performanceMetrics.directDrawBladeCount));
-    ImGui::TextDisabled("Orientation / frustum / distance / indirect counts: Phase 3 not enabled.");
+    ImGui::Text("Compute simulated: %llu", static_cast<unsigned long long>(performanceMetrics.simulatedBladeCount));
+    ImGui::Text("After orientation: %llu", static_cast<unsigned long long>(performanceMetrics.orientationVisibleBladeCount));
+    const double orientationCulledPercent = performanceMetrics.inputBladeCount > 0
+        ? 100.0 * static_cast<double>(performanceMetrics.orientationCulledBladeCount)
+            / static_cast<double>(performanceMetrics.inputBladeCount)
+        : 0.0;
+    ImGui::Text("Orientation culled: %llu (%.1f%%)",
+        static_cast<unsigned long long>(performanceMetrics.orientationCulledBladeCount), orientationCulledPercent);
+    ImGui::Text("Indirect draw blades: %llu", static_cast<unsigned long long>(performanceMetrics.indirectDrawBladeCount));
+    ImGui::TextDisabled("Frustum / distance counts: N/A (later phases)");
     ImGui::TextDisabled("Validation builds serialize swap-chain acquisition; use a Release capture for final CPU or fence conclusions.");
 }
 
@@ -203,41 +211,45 @@ void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& 
     ImGui::Begin("Grass Simulation");
 
     DrawPerformancePanel(performanceMetrics);
+    const SimulationControlRanges& ranges = presetLibrary.GetRanges();
 
-    // Layout values are intentionally read-only at runtime. Changing any of
-    // them would require rebuilding blade buffers, descriptor sets, dispatches,
-    // and recorded draw commands rather than merely updating a mapped UBO.
-    if (ImGui::CollapsingHeader("Grass field (startup configuration)")) {
-        const GrassFieldConfig& field = presetLibrary.GetGrassFieldConfig();
-        const float occupiedArea = field.patchSizeUnits * field.patchSizeUnits
-            * static_cast<float>(field.activePatchCount);
-        const double occupiedDensity = occupiedArea > 0.0f
-            ? static_cast<double>(field.totalBladeCount) / occupiedArea
-            : 0.0;
-        ImGui::Text("Patch size: %.1f x %.1f u", field.patchSizeUnits, field.patchSizeUnits);
-        ImGui::Text("Grid: %u rows x %u columns", field.rows, field.columns);
-        ImGui::Text("Active patches: %u", field.activePatchCount);
-        ImGui::Text("Total blades: %llu", static_cast<unsigned long long>(field.totalBladeCount));
-        ImGui::Text("Occupied density: %.2f blades/u^2", occupiedDensity);
-    }
-
-    if (ImGui::CollapsingHeader("Simulation presets", ImGuiTreeNodeFlags_DefaultOpen)) {
-        const std::vector<SimulationPreset>& simulationPresets = presetLibrary.GetSimulationPresets();
-        for (size_t index = 0; index < simulationPresets.size(); ++index) {
-            const SimulationPreset& preset = simulationPresets[index];
-            ImGui::PushID(preset.id.c_str());
-            if (ImGui::Button(preset.label.c_str())) {
-                // Applying a preset preserves delta/elapsed time: it does not
-                // restart the clock or teleport the already simulated blades.
-                presetLibrary.ApplySimulationPreset(preset, parameters);
-            }
-            ShowDescriptionTooltip(preset.description.c_str());
-            ImGui::PopID();
-            if (index + 1 < simulationPresets.size()) ImGui::SameLine();
+    if (ImGui::CollapsingHeader("Orientation culling", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool enabled = parameters.orientationCullingParameters.y > 0.5f;
+        if (ImGui::Checkbox("Enabled", &enabled)) {
+            parameters.orientationCullingParameters.y = enabled ? 1.0f : 0.0f;
         }
+        ImGui::BeginDisabled(!enabled);
+        ImGui::SliderFloat("Facing-alignment threshold", &parameters.orientationCullingParameters.x,
+            ranges.orientationAlignmentThreshold.minimum, ranges.orientationAlignmentThreshold.maximum, "%.2f");
+        ImGui::EndDisabled();
+        ImGui::TextDisabled("Uses abs(dot(root-to-camera, ribbon normal)); higher values retain fewer ribbons.");
     }
 
-    if (ImGui::CollapsingHeader("Gravity presets", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Wind", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Wind-field scale", &parameters.windDirectionAndFieldScale.w, ranges.windFieldScale.minimum, ranges.windFieldScale.maximum, "%.2f");
+        ImGui::SliderFloat("Primary bend-rate amplitude (m/s)", &parameters.windAmplitudesAndAdvectionSpeeds.x, ranges.primaryAmplitude.minimum, ranges.primaryAmplitude.maximum, "%.2f");
+        ImGui::SliderFloat("Secondary bend-rate amplitude (m/s)", &parameters.windAmplitudesAndAdvectionSpeeds.y, ranges.secondaryAmplitude.minimum, ranges.secondaryAmplitude.maximum, "%.2f");
+        ImGui::SliderFloat("Primary field advection speed (m/s)", &parameters.windAmplitudesAndAdvectionSpeeds.z, ranges.primaryAdvectionSpeed.minimum, ranges.primaryAdvectionSpeed.maximum, "%.2f");
+        ImGui::SliderFloat("Secondary field advection speed (m/s)", &parameters.windAmplitudesAndAdvectionSpeeds.w, ranges.secondaryAdvectionSpeed.minimum, ranges.secondaryAdvectionSpeed.maximum, "%.2f");
+        float primaryFieldScale = parameters.windFieldSpatialScales.x;
+        if (ImGui::SliderFloat("Primary field scale (cycles/m)", &primaryFieldScale, ranges.primaryFieldSpatialScale.minimum, ranges.primaryFieldSpatialScale.maximum, "%.3f")) {
+            parameters.windFieldSpatialScales.x = primaryFieldScale;
+            parameters.windFieldSpatialScales.y = primaryFieldScale;
+        }
+        float secondaryFieldScale = parameters.windFieldSpatialScales.z;
+        if (ImGui::SliderFloat("Secondary field scale (cycles/m)", &secondaryFieldScale, ranges.secondaryFieldSpatialScale.minimum, ranges.secondaryFieldSpatialScale.maximum, "%.3f")) {
+            parameters.windFieldSpatialScales.z = secondaryFieldScale;
+            parameters.windFieldSpatialScales.w = secondaryFieldScale;
+        }
+
+        glm::vec3 windDirection(parameters.windDirectionAndFieldScale.x, parameters.windDirectionAndFieldScale.y, parameters.windDirectionAndFieldScale.z);
+        DrawDirectionControl("wind_direction", "Camera-relative wind direction control", "W", IM_COL32(80, 190, 255, 255), glm::vec3(1.0f, 0.0f, 0.35f), windDirectionState, windDirection, cameraFrame);
+        parameters.windDirectionAndFieldScale.x = windDirection.x;
+        parameters.windDirectionAndFieldScale.y = windDirection.y;
+        parameters.windDirectionAndFieldScale.z = windDirection.z;
+    }
+
+    if (ImGui::CollapsingHeader("Gravity", ImGuiTreeNodeFlags_DefaultOpen)) {
         const std::vector<GravityPreset>& gravityPresets = presetLibrary.GetGravityPresets();
         for (size_t index = 0; index < gravityPresets.size(); ++index) {
             const GravityPreset& preset = gravityPresets[index];
@@ -251,35 +263,8 @@ void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& 
             ImGui::PopID();
             if (index + 1 < gravityPresets.size()) ImGui::SameLine();
         }
-    }
-
-    const SimulationControlRanges& ranges = presetLibrary.GetRanges();
-    if (ImGui::CollapsingHeader("Wind", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Wind-field scale", &parameters.windDirectionAndFieldScale.w, ranges.windFieldScale.minimum, ranges.windFieldScale.maximum, "%.2f");
-        ImGui::SliderFloat("Primary bend-rate amplitude (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.x, ranges.primaryAmplitude.minimum, ranges.primaryAmplitude.maximum, "%.2f");
-        ImGui::SliderFloat("Secondary bend-rate amplitude (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.y, ranges.secondaryAmplitude.minimum, ranges.secondaryAmplitude.maximum, "%.2f");
-        ImGui::SliderFloat("Primary field advection speed (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.z, ranges.primaryAdvectionSpeed.minimum, ranges.primaryAdvectionSpeed.maximum, "%.2f");
-        ImGui::SliderFloat("Secondary field advection speed (u/s)", &parameters.windAmplitudesAndAdvectionSpeeds.w, ranges.secondaryAdvectionSpeed.minimum, ranges.secondaryAdvectionSpeed.maximum, "%.2f");
-        float primaryFieldScale = parameters.windFieldSpatialScales.x;
-        if (ImGui::SliderFloat("Primary field scale (cycles/u)", &primaryFieldScale, ranges.primaryFieldSpatialScale.minimum, ranges.primaryFieldSpatialScale.maximum, "%.3f")) {
-            parameters.windFieldSpatialScales.x = primaryFieldScale;
-            parameters.windFieldSpatialScales.y = primaryFieldScale;
-        }
-        float secondaryFieldScale = parameters.windFieldSpatialScales.z;
-        if (ImGui::SliderFloat("Secondary field scale (cycles/u)", &secondaryFieldScale, ranges.secondaryFieldSpatialScale.minimum, ranges.secondaryFieldSpatialScale.maximum, "%.3f")) {
-            parameters.windFieldSpatialScales.z = secondaryFieldScale;
-            parameters.windFieldSpatialScales.w = secondaryFieldScale;
-        }
-
-        glm::vec3 windDirection(parameters.windDirectionAndFieldScale.x, parameters.windDirectionAndFieldScale.y, parameters.windDirectionAndFieldScale.z);
-        DrawDirectionControl("wind_direction", "Camera-relative wind direction control", "W", IM_COL32(80, 190, 255, 255), glm::vec3(1.0f, 0.0f, 0.35f), windDirectionState, windDirection, cameraFrame);
-        parameters.windDirectionAndFieldScale.x = windDirection.x;
-        parameters.windDirectionAndFieldScale.y = windDirection.y;
-        parameters.windDirectionAndFieldScale.z = windDirection.z;
-    }
-
-    if (ImGui::CollapsingHeader("Gravity and recovery", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Gravity pull rate (u/s)", &parameters.gravityDirectionAndPullRate.w, ranges.gravityPullRate.minimum, ranges.gravityPullRate.maximum, "%.2f");
+        ImGui::SliderFloat("Gravity bend rate (m/s)", &parameters.gravityDirectionAndPullRate.w, ranges.gravityPullRate.minimum, ranges.gravityPullRate.maximum, "%.2f");
+        ImGui::TextDisabled("A first-order bend rate, not physical acceleration (m/s^2).");
         glm::vec3 gravityDirection(parameters.gravityDirectionAndPullRate.x, parameters.gravityDirectionAndPullRate.y, parameters.gravityDirectionAndPullRate.z);
         DrawDirectionControl("gravity_direction", "Camera-relative gravity direction control", "G", IM_COL32(255, 185, 65, 255), glm::vec3(0.0f, -1.0f, 0.0f), gravityDirectionState, gravityDirection, cameraFrame);
         if (ImGui::Button("Reset gravity direction")) {
@@ -295,13 +280,48 @@ void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& 
         parameters.gravityDirectionAndPullRate.x = gravityDirection.x;
         parameters.gravityDirectionAndPullRate.y = gravityDirection.y;
         parameters.gravityDirectionAndPullRate.z = gravityDirection.z;
+        ImGui::SliderFloat("Front-gravity scale", &parameters.timeAndDeformationScales.w, ranges.frontGravityScale.minimum, ranges.frontGravityScale.maximum, "%.2f");
+    }
 
+    if (ImGui::CollapsingHeader("Recovery", ImGuiTreeNodeFlags_DefaultOpen)) {
         // The 1/30 s delta clamp keeps the widened recovery range bounded on a
         // long frame, but very high values intentionally make the grass rigid.
         ImGui::SliderFloat("Recovery-rate scale", &parameters.timeAndDeformationScales.z, ranges.recoveryRateScale.minimum, ranges.recoveryRateScale.maximum, "%.2f");
-        ImGui::SliderFloat("Front-gravity scale", &parameters.timeAndDeformationScales.w, ranges.frontGravityScale.minimum, ranges.frontGravityScale.maximum, "%.2f");
-
         ImGui::TextDisabled("Zero both gust amplitudes (or the field scale) to remove wind; zero gravity pull rate to remove gravity.");
+    }
+
+    if (ImGui::CollapsingHeader("Simulation presets")) {
+        const std::vector<SimulationPreset>& simulationPresets = presetLibrary.GetSimulationPresets();
+        for (size_t index = 0; index < simulationPresets.size(); ++index) {
+            const SimulationPreset& preset = simulationPresets[index];
+            ImGui::PushID(preset.id.c_str());
+            if (ImGui::Button(preset.label.c_str())) {
+                // Applying a preset preserves delta/elapsed time: it does not
+                // restart the clock or teleport the already simulated blades.
+                presetLibrary.ApplySimulationPreset(preset, parameters);
+            }
+            ShowDescriptionTooltip(preset.description.c_str());
+            ImGui::PopID();
+            if (index + 1 < simulationPresets.size()) ImGui::SameLine();
+        }
+    }
+
+    // Layout values are intentionally read-only at runtime. Changing any of
+    // them would require rebuilding blade buffers, descriptor sets, dispatches,
+    // and recorded draw commands rather than merely updating a mapped UBO.
+    if (ImGui::CollapsingHeader("Grass field (startup configuration)")) {
+        const GrassFieldConfig& field = presetLibrary.GetGrassFieldConfig();
+        const float occupiedArea = field.patchSizeMeters * field.patchSizeMeters
+            * static_cast<float>(field.activePatchCount);
+        const double occupiedDensity = occupiedArea > 0.0f
+            ? static_cast<double>(field.totalBladeCount) / occupiedArea
+            : 0.0;
+        ImGui::Text("Patch size: %.1f x %.1f m", field.patchSizeMeters, field.patchSizeMeters);
+        ImGui::TextUnformatted("World scale: 1 unit = 1 m");
+        ImGui::Text("Grid: %u rows x %u columns", field.rows, field.columns);
+        ImGui::Text("Active patches: %u", field.activePatchCount);
+        ImGui::Text("Total blades: %llu", static_cast<unsigned long long>(field.totalBladeCount));
+        ImGui::Text("Blade-ribbon density: %.2f blades/m^2", occupiedDensity);
     }
     ImGui::End();
 }

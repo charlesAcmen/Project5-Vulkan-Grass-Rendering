@@ -58,8 +58,14 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeMeters,
     const VkDeviceSize bladeBufferSize = static_cast<VkDeviceSize>(bladeCount) * sizeof(Blade);
     BufferUtils::CreateBufferFromData(device, commandPool, blades.data(), bladeBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sourceBladesBuffer, sourceBladesBufferMemory);
     BufferUtils::CreateBuffer(device, bladeBufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, visibleBladesBuffer, visibleBladesBufferMemory);
-    BufferUtils::CreateBufferFromData(device, commandPool, &indirectDraw, sizeof(BladeDrawIndirect), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
-            | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    VkBufferUsageFlags indirectDrawUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+        | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
+        | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+#ifndef NDEBUG
+    // The Debug-only metrics path copies vertexCount to a host-visible buffer.
+    indirectDrawUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+#endif
+    BufferUtils::CreateBufferFromData(device, commandPool, &indirectDraw, sizeof(BladeDrawIndirect), indirectDrawUsage,
         indirectDrawBuffer, indirectDrawBufferMemory);
 }
 

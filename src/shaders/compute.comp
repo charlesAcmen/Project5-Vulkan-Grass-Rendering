@@ -16,6 +16,7 @@ layout(std140, set = 1, binding = 0) uniform SimulationParameters {
     vec4 windAmplitudesAndAdvectionSpeeds;
     vec4 windFieldSpatialScales;
     vec4 gravityDirectionAndPullRate;
+    vec4 orientationCullingParameters;
 } simulation;
 
 struct Blade {

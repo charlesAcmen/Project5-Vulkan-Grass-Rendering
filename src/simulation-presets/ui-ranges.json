@@ -9,6 +9,7 @@
     "secondary_field_scale": [0.0, 0.10],
     "gravity_pull_rate": [0.0, 12.0],
     "recovery_rate_scale": [0.0, 3.0],
-    "front_gravity_scale": [0.0, 1.0]
+    "front_gravity_scale": [0.0, 1.0],
+    "orientation_alignment_threshold": [0.0, 0.99]
   }
 }

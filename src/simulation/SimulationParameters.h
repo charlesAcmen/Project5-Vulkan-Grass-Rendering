@@ -5,8 +5,9 @@
 #include <glm/glm.hpp>
 
 // This is the CPU mirror of the std140 SimulationParameters block in
-// shaders/compute.comp. Keep every member as a vec4 so that the C++ and GLSL
-// layouts advance in identical 16-byte steps without vec3 padding surprises.
+// shaders/compute.comp. World-space length is measured in meters. Keep every
+// member as a vec4 so that the C++ and GLSL layouts advance in identical
+// 16-byte steps without vec3 padding surprises.
 struct alignas(16) SimulationParameters {
     // x = delta seconds, y = elapsed seconds, z = recovery-rate scale,
     // w = front-gravity bend scale.
@@ -16,7 +17,7 @@ struct alignas(16) SimulationParameters {
     glm::vec4 windDirectionAndFieldScale;
 
     // x/y = non-negative primary/secondary gust amplitudes before the field
-    // scale, z/w = their field-advection speeds in world units per second.
+    // scale, z/w = their field-advection speeds in meters per second.
     glm::vec4 windAmplitudesAndAdvectionSpeeds;
 
     // x/y = duplicated primary field scale and z/w = duplicated secondary
@@ -24,8 +25,8 @@ struct alignas(16) SimulationParameters {
     // preserving the existing std140 vec4 slot and CPU/GPU ABI.
     glm::vec4 windFieldSpatialScales;
 
-    // xyz = world-space gravity direction, w = gravity pull rate in world
-    // units per second. This first-order model does not integrate acceleration,
+    // xyz = world-space gravity direction, w = gravity-driven bend rate in
+    // meters per second. This first-order model does not integrate acceleration,
     // so this value is intentionally not an SI gravity value such as 9.81 m/s^2.
     glm::vec4 gravityDirectionAndPullRate;
 
@@ -34,8 +35,8 @@ struct alignas(16) SimulationParameters {
     glm::vec4 orientationCullingParameters;
 
     SimulationParameters()
-        // This visual-natural preset assumes the existing scene-unit scale. It
-        // is not a calibrated real-world grass/material configuration.
+        // This visual preset uses meter-scale geometry, but it is not a
+        // calibrated material or force model.
         : timeAndDeformationScales(0.0f, 0.0f, 1.0f, 0.25f),
           windDirectionAndFieldScale(1.0f, 0.0f, 0.35f, 1.0f),
           // The two gust envelopes are added. Setting both amplitudes to zero

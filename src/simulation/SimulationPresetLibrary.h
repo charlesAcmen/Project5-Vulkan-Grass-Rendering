@@ -45,7 +45,8 @@ struct GravityPreset {
 // Each non-zero matrix cell owns one independent Blades group; 
 //the cell value is that group's blade count.
 struct GrassFieldConfig {
-    float patchSizeUnits = 0.0f;
+    // The renderer's world-space convention is one unit per meter.
+    float patchSizeMeters = 0.0f;
     uint32_t rows = 0;
     uint32_t columns = 0;
     uint32_t activePatchCount = 0;

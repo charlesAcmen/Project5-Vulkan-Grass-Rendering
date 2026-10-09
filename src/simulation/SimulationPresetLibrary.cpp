@@ -372,9 +372,9 @@ namespace {
         const JsonValue root = ReadJsonFile(path);
         GrassFieldConfig config;
 
-        config.patchSizeUnits = RequireNumber(root, "patch_size_units");
-        if (!std::isfinite(config.patchSizeUnits) || config.patchSizeUnits <= 0.0f) {
-            throw std::runtime_error("Grass field patch_size_units must be finite and greater than zero");
+        config.patchSizeMeters = RequireNumber(root, "patch_size_meters");
+        if (!std::isfinite(config.patchSizeMeters) || config.patchSizeMeters <= 0.0f) {
+            throw std::runtime_error("Grass field patch_size_meters must be finite and greater than zero");
         }
 
         config.rows = RequireUnsignedInteger(root, "rows");

@@ -20,7 +20,9 @@ Renderer* renderer;
 Camera* camera;
 
 namespace {
-    constexpr float kCameraMoveSpeed = 12.0f;
+    // One renderer world-space unit is one meter. Keep geometry, camera motion,
+    // wind advection, and future distance culling on this shared convention.
+    constexpr float kCameraMoveSpeedMetersPerSecond = 12.0f;
     constexpr float kCameraFastMoveMultiplier = 4.0f;
     constexpr float kMaximumMovementDeltaSeconds = 0.1f;
 
@@ -35,20 +37,20 @@ namespace {
         return value;
     }
 
-    CameraConfiguration CreateFieldCameraConfiguration(float fieldWidth, float fieldDepth, float patchSizeUnits) {
-        const float diagonal = std::sqrt(fieldWidth * fieldWidth + fieldDepth * fieldDepth);
-        const float cornerMargin = patchSizeUnits * 0.5f;
-        const glm::vec3 target(0.0f, 1.0f, 0.0f);
+    CameraConfiguration CreateFieldCameraConfiguration(float fieldWidthMeters, float fieldDepthMeters, float patchSizeMeters) {
+        const float diagonal = std::sqrt(fieldWidthMeters * fieldWidthMeters + fieldDepthMeters * fieldDepthMeters);
+        const float cornerMargin = patchSizeMeters * 0.5f;
+        const glm::vec3 target(0.0f, 1.0f, 0.0f); // One meter above ground.
         const glm::vec3 position(
-            -fieldWidth * 0.5f - cornerMargin,
+            -fieldWidthMeters * 0.5f - cornerMargin,
             std::max(5.0f, diagonal * 0.2f),
-            fieldDepth * 0.5f + cornerMargin);
+            fieldDepthMeters * 0.5f + cornerMargin);
         const float initialDistance = glm::length(position - target);
 
         CameraConfiguration configuration = {};
         configuration.position = position;
         configuration.target = target;
-        configuration.nearPlane = 0.1f;
+        configuration.nearPlane = 0.1f; // 10 cm.
         configuration.farPlane = std::max(100.0f, 2.0f * initialDistance + diagonal);
         return configuration;
     }
@@ -155,7 +157,7 @@ namespace {
 
         const bool fastMovement = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
             || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-        const float speed = kCameraMoveSpeed
+        const float speed = kCameraMoveSpeedMetersPerSecond
             * (fastMovement ? kCameraFastMoveMultiplier : 1.0f);
         //normalize the movement vector to avoid diagonal movement being faster than axis-aligned movement.
         camera->MoveRelative((movement / movementLength) * speed * deltaSeconds);
@@ -195,15 +197,15 @@ int RunApplication() {
     // terrain, blade buffers, descriptor sets, or recorded command buffers.
     SimulationPresetLibrary presetLibrary = SimulationPresetLibrary::LoadFromExecutableDirectory();
     const GrassFieldConfig& fieldConfig = presetLibrary.GetGrassFieldConfig();
-    const float fieldWidth = fieldConfig.patchSizeUnits * static_cast<float>(fieldConfig.columns);
-    const float fieldDepth = fieldConfig.patchSizeUnits * static_cast<float>(fieldConfig.rows);
-    if (!std::isfinite(fieldWidth) || !std::isfinite(fieldDepth)) {
+    const float fieldWidthMeters = fieldConfig.patchSizeMeters * static_cast<float>(fieldConfig.columns);
+    const float fieldDepthMeters = fieldConfig.patchSizeMeters * static_cast<float>(fieldConfig.rows);
+    if (!std::isfinite(fieldWidthMeters) || !std::isfinite(fieldDepthMeters)) {
         throw std::runtime_error("Grass field dimensions exceed the supported floating-point range");
     }
 
     const VkExtent2D initialExtent = swapChain->GetVkExtent();
     const CameraConfiguration cameraConfiguration = CreateFieldCameraConfiguration(
-        fieldWidth, fieldDepth, fieldConfig.patchSizeUnits);
+        fieldWidthMeters, fieldDepthMeters, fieldConfig.patchSizeMeters);
     camera = new Camera(device,
         static_cast<float>(initialExtent.width) / static_cast<float>(initialExtent.height),
         cameraConfiguration);
@@ -232,8 +234,8 @@ int RunApplication() {
         grassImageMemory
     );
 
-    const float halfWidth = fieldWidth * 0.5f;
-    const float halfDepth = fieldDepth * 0.5f;
+    const float halfWidth = fieldWidthMeters * 0.5f;
+    const float halfDepth = fieldDepthMeters * 0.5f;
     // Texture coordinates repeat once per logical patch. Enlarging the field
     // therefore preserves the existing ground texture scale instead of
     // stretching one copy across the complete grid.
@@ -267,10 +269,10 @@ int RunApplication() {
             // around the origin keeps terrain, camera navigation, and debug tools
             // numerically symmetric.
             const glm::vec2 patchCenter(
-                -halfWidth + (static_cast<float>(column) + 0.5f) * fieldConfig.patchSizeUnits,
-                 halfDepth - (static_cast<float>(row) + 0.5f) * fieldConfig.patchSizeUnits);
+                -halfWidth + (static_cast<float>(column) + 0.5f) * fieldConfig.patchSizeMeters,
+                 halfDepth - (static_cast<float>(row) + 0.5f) * fieldConfig.patchSizeMeters);
             Blades* patch = new Blades(device, transferCommandPool,
-                fieldConfig.patchSizeUnits, patchCenter, bladeCount,
+                fieldConfig.patchSizeMeters, patchCenter, bladeCount,
                 DerivePatchSeed(fieldConfig.randomSeed, row, column));
             bladePatches.push_back(patch);
             scene->AddBlades(patch);

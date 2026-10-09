@@ -51,6 +51,20 @@ layout(set = 2, binding = 1) uniform sampler2D gustField;
 bool inBounds(float value, float bounds) {
     return (value >= -bounds) && (value <= bounds);
 }
+layout(std430, set = 2, binding = 2) buffer VisibleBlades {
+    Blade blades[];
+} visibleBlades;
+
+// This binary layout matches VkDrawIndirectCommand. The CPU clears only
+// vertexCount before each dispatch; the remaining draw fields stay constant.
+layout(std430, set = 2, binding = 3) buffer DrawCommand {
+    //cleaned up before each dispatch
+    uint vertexCount;
+    //remaining fields are constant for the grass draw call
+    uint instanceCount;
+    uint firstVertex;
+    uint firstInstance;
+} drawCommand;
 
 void main() {
     // TODO: Apply forces on every blade and update the vertices in the buffer

@@ -544,44 +544,67 @@ void Renderer::CreateComputeDescriptorSets() {
         throw std::runtime_error("Failed to allocate compute descriptor sets");
     }
 
-    // Prepare one source-buffer and one gust-texture write for each group.
-    std::vector<VkDescriptorBufferInfo> bufferInfos(computeDescriptorSets.size());
+    // Prepare source, compacted-visible, indirect-command, and gust-texture
+    // writes for every independent blade group.
+    std::vector<VkDescriptorBufferInfo> sourceBufferInfos(computeDescriptorSets.size());
+    std::vector<VkDescriptorBufferInfo> visibleBufferInfos(computeDescriptorSets.size());
+    std::vector<VkDescriptorBufferInfo> indirectBufferInfos(computeDescriptorSets.size());
     std::vector<VkDescriptorImageInfo> gustImageInfos(computeDescriptorSets.size());
-    std::vector<VkWriteDescriptorSet> descriptorWrites(2 * computeDescriptorSets.size());
+    std::vector<VkWriteDescriptorSet> descriptorWrites(4 * computeDescriptorSets.size());
     for (uint32_t i = 0; i < computeDescriptorSets.size(); ++i) {
         // Select BladeGroup i's simulation buffer. Compute reads and writes its
         // Blade records in place; graphics later draws this same source buffer.
-        bufferInfos[i].buffer = scene->GetBlades()[i]->GetSourceBladesBuffer();
+        sourceBufferInfos[i].buffer = scene->GetBlades()[i]->GetSourceBladesBuffer();
 
         // Expose the complete Blade array, beginning at byte zero of the buffer.
-        bufferInfos[i].offset = 0;
-        bufferInfos[i].range = static_cast<VkDeviceSize>(scene->GetBlades()[i]->GetBladeCount()) * sizeof(Blade);
+        sourceBufferInfos[i].offset = 0;
+        sourceBufferInfos[i].range = static_cast<VkDeviceSize>(scene->GetBlades()[i]->GetBladeCount()) * sizeof(Blade);
 
         // Binding 0 selects this BladeGroup's mutable Blade array.
-        descriptorWrites[2 * i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2 * i].dstSet = computeDescriptorSets[i];
-        descriptorWrites[2 * i].dstBinding = 0;
-        descriptorWrites[2 * i].dstArrayElement = 0;
-        descriptorWrites[2 * i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        descriptorWrites[2 * i].descriptorCount = 1;
-        descriptorWrites[2 * i].pBufferInfo = &bufferInfos[i];
+        descriptorWrites[4 * i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4 * i].dstSet = computeDescriptorSets[i];
+        descriptorWrites[4 * i].dstBinding = 0;
+        descriptorWrites[4 * i].dstArrayElement = 0;
+        descriptorWrites[4 * i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[4 * i].descriptorCount = 1;
+        descriptorWrites[4 * i].pBufferInfo = &sourceBufferInfos[i];
 
         // Binding 1 is identical for every group because the generated field
         // is read-only and shared across all compute invocations.
         gustImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         gustImageInfos[i].imageView = windField->GetImageView();
         gustImageInfos[i].sampler = windField->GetSampler();
-        descriptorWrites[2 * i + 1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2 * i + 1].dstSet = computeDescriptorSets[i];
-        descriptorWrites[2 * i + 1].dstBinding = 1;
-        descriptorWrites[2 * i + 1].dstArrayElement = 0;
-        descriptorWrites[2 * i + 1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[2 * i + 1].descriptorCount = 1;
-        descriptorWrites[2 * i + 1].pImageInfo = &gustImageInfos[i];
+        descriptorWrites[4 * i + 1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4 * i + 1].dstSet = computeDescriptorSets[i];
+        descriptorWrites[4 * i + 1].dstBinding = 1;
+        descriptorWrites[4 * i + 1].dstArrayElement = 0;
+        descriptorWrites[4 * i + 1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[4 * i + 1].descriptorCount = 1;
+        descriptorWrites[4 * i + 1].pImageInfo = &gustImageInfos[i];
+
+        visibleBufferInfos[i].buffer = scene->GetBlades()[i]->GetVisibleBladesBuffer();
+        visibleBufferInfos[i].offset = 0;
+        visibleBufferInfos[i].range = sourceBufferInfos[i].range;
+        descriptorWrites[4 * i + 2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4 * i + 2].dstSet = computeDescriptorSets[i];
+        descriptorWrites[4 * i + 2].dstBinding = 2;
+        descriptorWrites[4 * i + 2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[4 * i + 2].descriptorCount = 1;
+        descriptorWrites[4 * i + 2].pBufferInfo = &visibleBufferInfos[i];
+
+        indirectBufferInfos[i].buffer = scene->GetBlades()[i]->GetIndirectDrawBuffer();
+        indirectBufferInfos[i].offset = 0;
+        indirectBufferInfos[i].range = sizeof(BladeDrawIndirect);
+        descriptorWrites[4 * i + 3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4 * i + 3].dstSet = computeDescriptorSets[i];
+        descriptorWrites[4 * i + 3].dstBinding = 3;
+        descriptorWrites[4 * i + 3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[4 * i + 3].descriptorCount = 1;
+        descriptorWrites[4 * i + 3].pBufferInfo = &indirectBufferInfos[i];
     }
 
-    // Commit all writes: each set maps its BladeGroup to binding 0 and the
-    // shared gust texture to binding 1.
+    // Commit each group's input, compacted output, command, and shared gust
+    // texture bindings in one update call.
     vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 

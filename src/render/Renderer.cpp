@@ -1408,10 +1408,12 @@ void Renderer::Frame() {
     VkSemaphore waitSemaphores[] = { swapChain->GetImageAvailableVkSemaphore(), computeFinishedSemaphore };
     //2 wait semaphore and stages:
     //imageAvailableSemaphore	COLOR_ATTACHMENT_OUTPUT
-    // computeFinishedSemaphore	VERTEX_INPUT
+    // computeFinishedSemaphore	indirect draw (vertex input) stage
     //compute shader will write sourceBladesBuffer
     //vertex input will ayncsly read sourceBladesBuffer
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT };
+    // The indirect command is the first graphics consumer of compute output;
+    // later vertex input reads the visible buffer after that same semaphore.
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT };
     submitInfo.waitSemaphoreCount = 2;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;

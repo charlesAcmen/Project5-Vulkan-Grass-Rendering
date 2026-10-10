@@ -1239,7 +1239,41 @@ void Renderer::RecordComputeCommandBuffer() {
     }
 
 #ifndef NDEBUG
+    // Keep the compute timestamp focused on the simulation and compaction
+    // dispatches; the Debug readback copy below is instrumentation overhead.
     performanceProfiler->RecordComputeEnd(computeCommandBuffer);
+
+    if (bladeGroupCount > 0) {
+        std::vector<VkBufferMemoryBarrier> computeToReadbackBarriers(bladeGroupCount);
+        for (uint32_t i = 0; i < bladeGroupCount; ++i) {
+            VkBufferMemoryBarrier& barrier = computeToReadbackBarriers[i];
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.buffer = scene->GetBlades()[i]->GetIndirectDrawBuffer();
+            barrier.offset = 0;
+            barrier.size = sizeof(uint32_t);
+        }
+        vkCmdPipelineBarrier(computeCommandBuffer,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0, 0, nullptr,
+            static_cast<uint32_t>(computeToReadbackBarriers.size()), computeToReadbackBarriers.data(),
+            0, nullptr);
+
+        for (uint32_t i = 0; i < bladeGroupCount; ++i) {
+            VkBufferCopy copyRegion = {};
+            copyRegion.srcOffset = 0;
+            copyRegion.dstOffset = static_cast<VkDeviceSize>(i) * sizeof(uint32_t);
+            copyRegion.size = sizeof(uint32_t);
+            vkCmdCopyBuffer(computeCommandBuffer,
+                scene->GetBlades()[i]->GetIndirectDrawBuffer(),
+                visibilityCountReadbackBuffer,
+                1, &copyRegion);
+        }
+    }
 #endif
 
     // ~ End recording ~

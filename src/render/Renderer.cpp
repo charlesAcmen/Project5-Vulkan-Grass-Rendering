@@ -4,6 +4,7 @@
 #include "scene/Vertex.h"
 #include "scene/Blades.h"
 #include "scene/Camera.h"
+#include "BufferUtils.h"
 #include "Image.h"
 #include "Window.h"
 
@@ -43,6 +44,7 @@ Renderer::Renderer(Device* device, SwapChain* swapChain, Scene* scene, Camera* c
         inputBladeCount += blades->GetBladeCount();
     }
     performanceProfiler = std::make_unique<PerformanceProfiler>(device, inputBladeCount);
+    CreateVisibilityCountReadback();
     uiLayer = new ImGuiVulkanLayer(device, swapChain, renderPass, GetGLFWWindow(), presetLibrary);
 #endif
     RecordCommandBuffers();
@@ -1083,6 +1085,56 @@ void Renderer::RecreateSwapChainResources() {
     CreateSwapChainResources();
 }
 
+#ifndef NDEBUG
+void Renderer::CreateVisibilityCountReadback() {
+    bladeGroupCount = static_cast<uint32_t>(scene->GetBlades().size());
+    if (bladeGroupCount == 0) {
+        return;
+    }
+
+    const VkDeviceSize size = static_cast<VkDeviceSize>(bladeGroupCount) * sizeof(uint32_t);
+    BufferUtils::CreateBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        visibilityCountReadbackBuffer, visibilityCountReadbackMemory);
+    void* mappedMemory = nullptr;
+    if (vkMapMemory(logicalDevice, visibilityCountReadbackMemory, 0, size, 0,
+            &mappedMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to map orientation-culling count readback buffer");
+    }
+    mappedVisibilityCounts = static_cast<uint32_t*>(mappedMemory);
+}
+
+void Renderer::DestroyVisibilityCountReadback() {
+    if (mappedVisibilityCounts != nullptr) {
+        //only unmap when destorying
+        vkUnmapMemory(logicalDevice, visibilityCountReadbackMemory);
+        mappedVisibilityCounts = nullptr;
+    }
+    if (visibilityCountReadbackBuffer != VK_NULL_HANDLE) {
+        vkDestroyBuffer(logicalDevice, visibilityCountReadbackBuffer, nullptr);
+        visibilityCountReadbackBuffer = VK_NULL_HANDLE;
+    }
+    if (visibilityCountReadbackMemory != VK_NULL_HANDLE) {
+        vkFreeMemory(logicalDevice, visibilityCountReadbackMemory, nullptr);
+        visibilityCountReadbackMemory = VK_NULL_HANDLE;
+    }
+    bladeGroupC ount = 0;
+}
+
+void Renderer::CollectCompletedVisibilityCounts() {
+    if (!hasVisibilityCountsToCollect || mappedVisibilityCounts == nullptr) {
+        return;
+    }
+
+    uint64_t visibleBladeCount = 0;
+    for (uint32_t i = 0; i < bladeGroupCount; ++i) {
+        visibleBladeCount += mappedVisibilityCounts[i];
+    }
+    performanceProfiler->SetOrientationCullingCounts(visibleBladeCount);
+    hasVisibilityCountsToCollect = false;
+}
+#endif
+
 void Renderer::RecordComputeCommandBuffer() {
     // Specify the command pool and number of buffers to allocate
     VkCommandBufferAllocateInfo allocInfo = {};
@@ -1269,6 +1321,7 @@ void Renderer::Frame() {
 #ifndef NDEBUG
     performanceProfiler->EndFenceWait();
     performanceProfiler->CollectCompletedGpuFrame();
+    CollectCompletedVisibilityCounts();
 #endif
 
     if (!swapChain->Acquire()) {
@@ -1338,6 +1391,7 @@ void Renderer::Frame() {
     }
 #ifndef NDEBUG
     performanceProfiler->MarkGpuFrameSubmitted();
+    hasVisibilityCountsToCollect = true;
 #endif
 
     if (!swapChain->Present()) {
@@ -1352,6 +1406,10 @@ Renderer::~Renderer() {
     vkDeviceWaitIdle(logicalDevice);
 
     // TODO: destroy any resources you created
+
+#ifndef NDEBUG
+    DestroyVisibilityCountReadback();
+#endif
 
     delete uiLayer;
     uiLayer = nullptr;

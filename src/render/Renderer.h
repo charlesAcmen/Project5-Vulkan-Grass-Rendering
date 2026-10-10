@@ -112,6 +112,21 @@ private:
 
     ImGuiVulkanLayer* uiLayer = nullptr;
 
+#ifndef NDEBUG
+    // One uint32_t vertexCount is copied from every indirect command after
+    // compute. This Debug-only readback makes the overlay report actual
+    // compaction results without adding a CPU/GPU transfer to Release builds.
+    VkBuffer visibilityCountReadbackBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory visibilityCountReadbackMemory = VK_NULL_HANDLE;
+    uint32_t* mappedVisibilityCounts = nullptr;
+    uint32_t bladeGroupCount = 0;
+    bool hasVisibilityCountsToCollect = false;
+
+    void CreateVisibilityCountReadback();
+    void DestroyVisibilityCountReadback(); 
+    void CollectCompletedVisibilityCounts();
+#endif
+
     void DestroySwapChainResources();
     void CreateSwapChainResources();
 };

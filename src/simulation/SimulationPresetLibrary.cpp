@@ -354,6 +354,12 @@ namespace {
             0.0f,
             0.0f
         );
+        preset.parameters.distanceCullingParameters = glm::vec4(
+            RequireNumber(root, "distance_culling_max_distance_meters"),
+            RequireBoolean(root, "distance_culling_enabled") ? 1.0f : 0.0f,
+            0.0f,
+            0.0f
+        );
         return preset;
     }
 
@@ -463,6 +469,7 @@ SimulationPresetLibrary SimulationPresetLibrary::LoadFromExecutableDirectory() {
     library.ranges.recoveryRateScale = RequireRange(rangesRoot, "recovery_rate_scale");
     library.ranges.frontGravityScale = RequireRange(rangesRoot, "front_gravity_scale");
     library.ranges.orientationAlignmentThreshold = RequireRange(rangesRoot, "orientation_alignment_threshold");
+    library.ranges.distanceCullingMaximumDistance = RequireRange(rangesRoot, "distance_culling_max_distance_meters");
 
     const char* simulationFiles[] = { "calm.json", "breezy.json", "strong-wind.json", "stress-test.json" };
     for (size_t i = 0; i < sizeof(simulationFiles) / sizeof(simulationFiles[0]); ++i) {

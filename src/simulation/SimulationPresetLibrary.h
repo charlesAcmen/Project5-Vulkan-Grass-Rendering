@@ -25,6 +25,7 @@ struct SimulationControlRanges {
     SimulationSliderRange recoveryRateScale;
     SimulationSliderRange frontGravityScale;
     SimulationSliderRange orientationAlignmentThreshold;
+    SimulationSliderRange distanceCullingMaximumDistance;
 };
 
 struct SimulationPreset {

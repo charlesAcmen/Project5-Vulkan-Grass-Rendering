@@ -18,6 +18,12 @@ CPU 生成 Blade 数据
 `vec4`。它们的 `.w` 依次存储 orientation、height、width、stiffness。
 修改时必须保持 C++ 与 GLSL 的字段顺序完全一致。
 
+## 世界尺度约定
+
+渲染世界采用 `1 unit = 1 meter`。场地、草叶几何、相机位置与裁剪面使用 m；
+风场平流和一阶弯曲速率使用 m/s，空间频率使用 cycles/m。当前弯曲模型不是
+基于质量和加速度的牛顿力学，因此其 gravity bend rate 不能解释为 `9.81 m/s²`。
+
 ## 阶段 0：环境与可验证基线
 
 ### 目标

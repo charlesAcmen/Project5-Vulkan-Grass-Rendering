@@ -264,11 +264,23 @@ void Renderer::CreateComputeDescriptorSetLayout() {
     gustFieldLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     gustFieldLayoutBinding.pImmutableSamplers = nullptr;
 
-    // Phase 2.5 adds only an immutable input texture. Phase 3 keeps bindings
-    // 0/1 intact and adds visible-blade and indirect-command output buffers.
-    const std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
+    VkDescriptorSetLayoutBinding visibleBladesLayoutBinding = {};
+    visibleBladesLayoutBinding.binding = 2;
+    visibleBladesLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    visibleBladesLayoutBinding.descriptorCount = 1;
+    visibleBladesLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    VkDescriptorSetLayoutBinding indirectDrawLayoutBinding = {};
+    indirectDrawLayoutBinding.binding = 3;
+    indirectDrawLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    indirectDrawLayoutBinding.descriptorCount = 1;
+    indirectDrawLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    const std::array<VkDescriptorSetLayoutBinding, 4> bindings = {
         sourceBladesLayoutBinding,
-        gustFieldLayoutBinding
+        gustFieldLayoutBinding,
+        visibleBladesLayoutBinding,
+        indirectDrawLayoutBinding
     };
     VkDescriptorSetLayoutCreateInfo layoutInfo = {};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -290,8 +302,8 @@ void Renderer::CreateDescriptorPool() {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 + modelCount + bladeGroupCount },
         // Every compute descriptor set samples the one shared gust texture.
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, modelCount + bladeGroupCount },
-        // TODO: Add any additional types and counts of descriptors you will need to allocate
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, bladeGroupCount },
+        // Source, compacted-visible, and indirect-command buffers per group.
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3 * bladeGroupCount },
     };
 
     VkDescriptorPoolCreateInfo poolInfo = {};

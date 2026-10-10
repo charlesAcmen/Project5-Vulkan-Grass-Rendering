@@ -85,16 +85,23 @@ struct BladeDrawIndirect {
     uint32_t instanceCount;
     uint32_t firstVertex;
     uint32_t firstInstance;
+    uint32_t distanceVisibleCount;
+    uint32_t frustumVisibleCount;
 };
 
 // Phase 3 writes this record from compute and passes its bytes to
 // vkCmdDrawIndirect. It must remain ABI-compatible with Vulkan's command type.
+// The first four members are exactly VkDrawIndirectCommand. Compute appends
+// per-stage visibility counters that Debug readback consumes; vkCmdDrawIndirect
+// ignores the appended bytes because it reads only the command prefix.
 static_assert(std::is_standard_layout_v<BladeDrawIndirect>, "Indirect command must have a stable byte layout");
-static_assert(sizeof(BladeDrawIndirect) == sizeof(VkDrawIndirectCommand), "Indirect command size must match Vulkan");
+static_assert(sizeof(BladeDrawIndirect) == sizeof(VkDrawIndirectCommand) + 2 * sizeof(uint32_t), "Unexpected culling counter storage");
 static_assert(offsetof(BladeDrawIndirect, vertexCount) == offsetof(VkDrawIndirectCommand, vertexCount), "Unexpected indirect vertexCount offset");
 static_assert(offsetof(BladeDrawIndirect, instanceCount) == offsetof(VkDrawIndirectCommand, instanceCount), "Unexpected indirect instanceCount offset");
 static_assert(offsetof(BladeDrawIndirect, firstVertex) == offsetof(VkDrawIndirectCommand, firstVertex), "Unexpected indirect firstVertex offset");
 static_assert(offsetof(BladeDrawIndirect, firstInstance) == offsetof(VkDrawIndirectCommand, firstInstance), "Unexpected indirect firstInstance offset");
+static_assert(offsetof(BladeDrawIndirect, distanceVisibleCount) == sizeof(VkDrawIndirectCommand), "Unexpected distance counter offset");
+static_assert(offsetof(BladeDrawIndirect, frustumVisibleCount) == sizeof(VkDrawIndirectCommand) + sizeof(uint32_t), "Unexpected frustum counter offset");
 
 class Blades : public Model {
 private:

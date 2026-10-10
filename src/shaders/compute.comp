@@ -17,6 +17,7 @@ layout(std140, set = 1, binding = 0) uniform SimulationParameters {
     vec4 windFieldSpatialScales;
     vec4 gravityDirectionAndPullRate;
     vec4 orientationCullingParameters;
+    vec4 distanceCullingParameters;
 } simulation;
 
 struct Blade {
@@ -169,10 +170,25 @@ void main() {
     blade.v2.xyz = correctedTip;
     sourceBlades.blades[bladeIndex] = blade;
 
-	// TODO: Cull blades that are too far away or not in the camera frustum and write them
+	// TODO: Cull blades outside the camera frustum and write them
 	// to the culled blades buffer
 	// Note: to do this, you will need to use an atomic operation to read and update numBlades.vertexCount
 	// You want to write the visible blades to the buffer without write conflicts between threads
+    // Distance culling is intentionally performed after simulation so an
+    // off-screen blade keeps an up-to-date physical state when it returns.
+    vec3 cameraOffset = camera.cameraPosition.xyz - root;
+    const float cameraDistanceSquared = dot(cameraOffset, cameraOffset);
+    //distanceCullingParameters(120.0f, 1.0f, 0.0f, 0.0f)
+    const bool distanceCullingEnabled = simulation.distanceCullingParameters.y > 0.5;
+    const float maximumDistance = max(simulation.distanceCullingParameters.x, 0.0);
+    if (distanceCullingEnabled && cameraDistanceSquared > maximumDistance * maximumDistance) {
+        return;
+    }
+    //w = Debug per-stage counter enable.
+    if (simulation.distanceCullingParameters.w > 0.5) {
+        atomicAdd(drawCommand.distanceVisibleCount, 1);
+    }
+
     // The ribbon normal is derived by the same facing/up convention as the
     // tessellation shader.
     vec3 facing = normalize(vec3(cos(blade.v0.w), 0.0, sin(blade.v0.w)));

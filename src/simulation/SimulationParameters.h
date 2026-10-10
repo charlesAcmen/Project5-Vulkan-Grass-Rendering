@@ -31,8 +31,12 @@ struct alignas(16) SimulationParameters {
     glm::vec4 gravityDirectionAndPullRate;
 
     // x = absolute ribbon-facing alignment threshold, y = enabled (0 or 1).
-    // z/w are reserved for the later frustum and distance-culling stages.
+    // z/w are reserved for the later frustum-culling stage.
     glm::vec4 orientationCullingParameters;
+
+    // x = maximum root-to-camera distance in meters, y = enabled (0 or 1),
+    // z = reserved for frustum culling, w = Debug per-stage counter enable.
+    glm::vec4 distanceCullingParameters;
 
     SimulationParameters()
         // This visual preset uses meter-scale geometry, but it is not a
@@ -44,15 +48,17 @@ struct alignas(16) SimulationParameters {
           windAmplitudesAndAdvectionSpeeds(0.55f, 0.25f, 1.20f, 0.45f),
           windFieldSpatialScales(0.020f, 0.020f, 0.014f, 0.014f),
           gravityDirectionAndPullRate(0.0f, -1.0f, 0.0f, 0.90f),
-          orientationCullingParameters(0.90f, 1.0f, 0.0f, 0.0f) {
+          orientationCullingParameters(0.90f, 1.0f, 0.0f, 0.0f),
+          distanceCullingParameters(120.0f, 1.0f, 0.0f, 0.0f) {
     }
 };
 
 static_assert(sizeof(glm::vec4) == 16, "Simulation UBO assumes 16-byte vec4 values");
-static_assert(sizeof(SimulationParameters) == 6 * sizeof(glm::vec4), "Simulation UBO must occupy six std140 vec4 slots");
+static_assert(sizeof(SimulationParameters) == 7 * sizeof(glm::vec4), "Simulation UBO must occupy seven std140 vec4 slots");
 static_assert(offsetof(SimulationParameters, timeAndDeformationScales) == 0, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windDirectionAndFieldScale) == 16, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windAmplitudesAndAdvectionSpeeds) == 32, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, windFieldSpatialScales) == 48, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, gravityDirectionAndPullRate) == 64, "Unexpected SimulationParameters offset");
 static_assert(offsetof(SimulationParameters, orientationCullingParameters) == 80, "Unexpected SimulationParameters offset");
+static_assert(offsetof(SimulationParameters, distanceCullingParameters) == 96, "Unexpected SimulationParameters offset");

@@ -1312,17 +1312,19 @@ void Renderer::RecordCommandBuffer(uint32_t imageIndex) {
 
     for (uint32_t j = 0; j < scene->GetBlades().size(); ++j) {
         // Phase 1 draws every source blade directly. Phase 3 replaces this with visible-buffer indirect drawing.
-        VkBuffer vertexBuffers[] = { scene->GetBlades()[j]->GetSourceBladesBuffer() };
+        // Compute compacts orientation-visible blades into this vertex buffer
+        // and writes the matching VkDrawIndirectCommand beside it.
+        VkBuffer vertexBuffers[] = { scene->GetBlades()[j]->GetVisibleBladesBuffer() };
         VkDeviceSize offsets[] = { 0 };
         // TODO: Uncomment this when the buffers are populated
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, grassPipelineLayout, 1, 1, &grassDescriptorSets[j], 0, nullptr);
-        vkCmdDraw(commandBuffer, scene->GetBlades()[j]->GetBladeCount(), 1, 0, 0);
+        // vkCmdDraw(commandBuffer, scene->GetBlades()[j]->GetBladeCount(), 1, 0, 0);   
         // TODO: Bind the descriptor set for each grass blades model
 
         // Draw
         // TODO: Uncomment this when the buffers are populated
-        // vkCmdDrawIndirect(commandBuffer, scene->GetBlades()[j]->GetNumBladesBuffer(), 0, 1, sizeof(BladeDrawIndirect));
+        vkCmdDrawIndirect(commandBuffer, scene->GetBlades()[j]->GetIndirectDrawBuffer(), 0, 1, sizeof(BladeDrawIndirect));
     }
 #ifndef NDEBUG
     performanceProfiler->RecordGrassEnd(commandBuffer);

@@ -1208,8 +1208,33 @@ void Renderer::RecordComputeCommandBuffer() {
 
     // TODO: For each group of blades bind its descriptor set and dispatch
     for (uint32_t i = 0; i < computeDescriptorSets.size(); ++i) {
+        Blades* blades = scene->GetBlades()[i];
+        const VkBuffer indirectBuffer = blades->GetIndirectDrawBuffer();
+
+        // vertexCount is the atomic allocation counter. instanceCount and the
+        // first-* fields were initialized once in Blades and remain unchanged.
+        //clear up counter for the patch
+        vkCmdFillBuffer(computeCommandBuffer, indirectBuffer, 0, sizeof(uint32_t), 0);
+        VkBufferMemoryBarrier clearToComputeBarrier = {};
+        clearToComputeBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+        //write available to compute shader read/write
+        clearToComputeBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        //read and write access for the compute shader
+        clearToComputeBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+        clearToComputeBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        clearToComputeBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        clearToComputeBarrier.buffer = indirectBuffer;
+        clearToComputeBarrier.offset = 0;
+        clearToComputeBarrier.size = sizeof(BladeDrawIndirect);
+        //same queue to submit,so use pipeline barrier
+        vkCmdPipelineBarrier(computeCommandBuffer,
+            //source stage: transfer, destination stage: compute shader
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            0, 0, nullptr, 1, &clearToComputeBarrier, 0, nullptr);
+
         vkCmdBindDescriptorSets(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 2, 1, &computeDescriptorSets[i], 0, nullptr);
-        const uint32_t bladeCount = scene->GetBlades()[i]->GetBladeCount();
+        const uint32_t bladeCount = blades->GetBladeCount();
         vkCmdDispatch(computeCommandBuffer, (bladeCount + WORKGROUP_SIZE - 1) / WORKGROUP_SIZE, 1, 1);
     }
 

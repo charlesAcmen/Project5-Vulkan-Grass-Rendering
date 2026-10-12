@@ -18,6 +18,7 @@ layout(std140, set = 1, binding = 0) uniform SimulationParameters {
     vec4 gravityDirectionAndPullRate;
     vec4 orientationCullingParameters;
     vec4 distanceCullingParameters;
+    vec4 frustumCullingParameters;
 } simulation;
 
 struct Blade {
@@ -185,7 +186,21 @@ void main() {
     }
     //w = Debug per-stage counter enable.
     if (simulation.distanceCullingParameters.w > 0.5) {
-        atomicAdd(drawCommand.distanceVisibleCount, 1);
+        atomicAdd(cullingCounters.distanceVisibleCount, 1);
+    }
+
+    // Use the exact graphics projection. V1 is only a Bezier guide, so test
+    // V0, V2, and the curve midpoint B(0.5); there is no tolerance or guard band.
+    const bool frustumCullingEnabled = simulation.frustumCullingParameters.y > 0.5;
+    const vec3 midpoint = 0.25 * blade.v0.xyz + 0.5 * blade.v1.xyz + 0.25 * blade.v2.xyz;
+    const bool bladeInsideFrustum = IsInsideFrustum(blade.v0.xyz)
+        || IsInsideFrustum(midpoint)
+        || IsInsideFrustum(blade.v2.xyz);
+    if (frustumCullingEnabled && !bladeInsideFrustum) {
+        return;
+    }
+    if (simulation.distanceCullingParameters.w > 0.5) {
+        atomicAdd(cullingCounters.frustumVisibleCount, 1);
     }
 
     // The ribbon normal is derived by the same facing/up convention as the

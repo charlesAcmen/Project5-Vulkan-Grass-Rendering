@@ -243,7 +243,7 @@ void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& 
         if (ImGui::Checkbox("Enabled##frustumCulling", &enabled)) {
             parameters.frustumCullingParameters.y = enabled ? 1.0f : 0.0f;
         }
-        ImGui::TextDisabled("Uses the current camera projection and the V0/V1/V2 control points with no tolerance.");
+        ImGui::TextDisabled("Uses the current camera projection and V0/V2/B(0.5), with no tolerance.");
     }
 
     if (ImGui::CollapsingHeader("Orientation culling", ImGuiTreeNodeFlags_DefaultOpen)) {

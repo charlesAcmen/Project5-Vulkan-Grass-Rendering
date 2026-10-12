@@ -38,8 +38,8 @@ struct alignas(16) SimulationParameters {
     // z = reserved, w = Debug per-stage counter enable.
     glm::vec4 distanceCullingParameters;
 
-    // x = reserved for a future frustum guard band in meters, y = enabled
-    // (0 or 1). z/w are reserved
+    // x/z/w are reserved; y = frustum culling enabled (0 or 1). The test has
+    // no tolerance or guard band.
     glm::vec4 frustumCullingParameters;
 
     SimulationParameters()

@@ -63,12 +63,18 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeMeters,
     VkBufferUsageFlags indirectDrawUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
         | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
         | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    
+    VkBufferUsageFlags cullingCounterUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+        | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 #ifndef NDEBUG
     // The Debug-only metrics path copies vertexCount to a host-visible buffer.
     indirectDrawUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    cullingCounterUsage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 #endif
     BufferUtils::CreateBufferFromData(device, commandPool, &indirectDraw, sizeof(BladeDrawIndirect), indirectDrawUsage,
         indirectDrawBuffer, indirectDrawBufferMemory);
+    BufferUtils::CreateBufferFromData(device, commandPool, &cullingCounters, sizeof(CullingCounters), cullingCounterUsage,
+        cullingCountersBuffer, cullingCountersBufferMemory);
 }
 
 VkBuffer Blades::GetSourceBladesBuffer() const {
@@ -87,6 +93,10 @@ VkBuffer Blades::GetIndirectDrawBuffer() const {
     return indirectDrawBuffer;
 }
 
+VkBuffer Blades::GetCullingCountersBuffer() const {
+    return cullingCountersBuffer;
+}
+
 Blades::~Blades() {
     vkDestroyBuffer(device->GetVkDevice(), sourceBladesBuffer, nullptr);
     vkFreeMemory(device->GetVkDevice(), sourceBladesBufferMemory, nullptr);
@@ -94,4 +104,6 @@ Blades::~Blades() {
     vkFreeMemory(device->GetVkDevice(), visibleBladesBufferMemory, nullptr);
     vkDestroyBuffer(device->GetVkDevice(), indirectDrawBuffer, nullptr);
     vkFreeMemory(device->GetVkDevice(), indirectDrawBufferMemory, nullptr);
+    vkDestroyBuffer(device->GetVkDevice(), cullingCountersBuffer, nullptr);
+    vkFreeMemory(device->GetVkDevice(), cullingCountersBufferMemory, nullptr);
 }

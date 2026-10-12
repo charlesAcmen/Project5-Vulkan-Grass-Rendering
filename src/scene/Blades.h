@@ -113,10 +113,12 @@ private:
     VkBuffer sourceBladesBuffer;
     VkBuffer visibleBladesBuffer;
     VkBuffer indirectDrawBuffer;
+    VkBuffer cullingCountersBuffer;
 
     VkDeviceMemory sourceBladesBufferMemory;
     VkDeviceMemory visibleBladesBufferMemory;
     VkDeviceMemory indirectDrawBufferMemory;
+    VkDeviceMemory cullingCountersBufferMemory;
 
 public:
     // patchCenterXZ is baked into every control point in world space. Compute
@@ -128,5 +130,6 @@ public:
     VkBuffer GetSourceBladesBuffer() const;
     VkBuffer GetVisibleBladesBuffer() const;
     VkBuffer GetIndirectDrawBuffer() const;
+    VkBuffer GetCullingCountersBuffer() const;
     ~Blades();
 };

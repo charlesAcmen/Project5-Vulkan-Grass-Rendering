@@ -202,15 +202,21 @@ void SimulationPanel::DrawPerformancePanel(const PerformanceMetrics& performance
         : 0.0;
     ImGui::Text("Distance culled: %llu (%.1f%%)",
         static_cast<unsigned long long>(performanceMetrics.distanceCulledBladeCount), distanceCulledPercent);
-    ImGui::Text("Final visible: %llu", static_cast<unsigned long long>(performanceMetrics.finalVisibleBladeCount));
-    const double orientationCulledPercent = performanceMetrics.distanceVisibleBladeCount > 0
-        ? 100.0 * static_cast<double>(performanceMetrics.orientationCulledBladeCount)
+    ImGui::Text("After frustum: %llu", static_cast<unsigned long long>(performanceMetrics.frustumVisibleBladeCount));
+    const double frustumCulledPercent = performanceMetrics.distanceVisibleBladeCount > 0
+        ? 100.0 * static_cast<double>(performanceMetrics.frustumCulledBladeCount)
             / static_cast<double>(performanceMetrics.distanceVisibleBladeCount)
+        : 0.0;
+    ImGui::Text("Frustum culled: %llu (%.1f%%)",
+        static_cast<unsigned long long>(performanceMetrics.frustumCulledBladeCount), frustumCulledPercent);
+    ImGui::Text("Final visible: %llu", static_cast<unsigned long long>(performanceMetrics.finalVisibleBladeCount));
+    const double orientationCulledPercent = performanceMetrics.frustumVisibleBladeCount > 0
+        ? 100.0 * static_cast<double>(performanceMetrics.orientationCulledBladeCount)
+            / static_cast<double>(performanceMetrics.frustumVisibleBladeCount)
         : 0.0;
     ImGui::Text("Orientation culled: %llu (%.1f%%)",
         static_cast<unsigned long long>(performanceMetrics.orientationCulledBladeCount), orientationCulledPercent);
     ImGui::TextDisabled("Final visible is the count consumed by vkCmdDrawIndirect.");
-    ImGui::TextDisabled("Frustum count: N/A (later phase)");
     ImGui::TextDisabled("Validation builds serialize swap-chain acquisition; use a Release capture for final CPU or fence conclusions.");
 }
 
@@ -230,6 +236,14 @@ void SimulationPanel::Draw(SimulationParameters& parameters, const CameraFrame& 
             ranges.distanceCullingMaximumDistance.minimum, ranges.distanceCullingMaximumDistance.maximum, "%.1f");
         ImGui::EndDisabled();
         ImGui::TextDisabled("Rejects grass whose root is farther than this distance from the camera.");
+    }
+
+    if (ImGui::CollapsingHeader("Frustum culling", ImGuiTreeNodeFlags_DefaultOpen)) {
+        bool enabled = parameters.frustumCullingParameters.y > 0.5f;
+        if (ImGui::Checkbox("Enabled##frustumCulling", &enabled)) {
+            parameters.frustumCullingParameters.y = enabled ? 1.0f : 0.0f;
+        }
+        ImGui::TextDisabled("Uses the current camera projection and the V0/V1/V2 control points with no tolerance.");
     }
 
     if (ImGui::CollapsingHeader("Orientation culling", ImGuiTreeNodeFlags_DefaultOpen)) {

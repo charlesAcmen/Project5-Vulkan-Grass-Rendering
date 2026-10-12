@@ -67,6 +67,19 @@ layout(std430, set = 2, binding = 3) buffer DrawCommand {
     uint firstInstance;
 } drawCommand;
 
+layout(std430, set = 2, binding = 4) buffer CullingCounters {
+    uint distanceVisibleCount;
+    uint frustumVisibleCount;
+} cullingCounters;
+
+bool IsInsideFrustum(vec3 worldPosition) {
+    const vec4 clipPosition = camera.proj * camera.view * vec4(worldPosition, 1.0);
+    return clipPosition.w > 0.0
+        && clipPosition.x >= -clipPosition.w && clipPosition.x <= clipPosition.w
+        && clipPosition.y >= -clipPosition.w && clipPosition.y <= clipPosition.w
+        && clipPosition.z >= 0.0 && clipPosition.z <= clipPosition.w;
+}
+
 void main() {
     // TODO: Apply forces on every blade and update the vertices in the buffer
     uint bladeIndex = gl_GlobalInvocationID.x;

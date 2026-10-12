@@ -1272,17 +1272,24 @@ void Renderer::RecordComputeCommandBuffer() {
     performanceProfiler->RecordComputeEnd(computeCommandBuffer);
 
     if (bladeGroupCount > 0) {
-        std::vector<VkBufferMemoryBarrier> computeToReadbackBarriers(bladeGroupCount);
+        std::vector<VkBufferMemoryBarrier> computeToReadbackBarriers(2 * bladeGroupCount);
         for (uint32_t i = 0; i < bladeGroupCount; ++i) {
-            VkBufferMemoryBarrier& barrier = computeToReadbackBarriers[i];
-            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.buffer = scene->GetBlades()[i]->GetIndirectDrawBuffer();
-            barrier.offset = 0;
-            barrier.size = sizeof(BladeDrawIndirect);
+            const VkBuffer buffers[] = {
+                scene->GetBlades()[i]->GetIndirectDrawBuffer(),
+                scene->GetBlades()[i]->GetCullingCountersBuffer()
+            };
+            const VkDeviceSize sizes[] = { sizeof(BladeDrawIndirect), sizeof(CullingCounters) };
+            for (uint32_t bufferIndex = 0; bufferIndex < 2; ++bufferIndex) {
+                VkBufferMemoryBarrier& barrier = computeToReadbackBarriers[2 * i + bufferIndex];
+                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.buffer = buffers[bufferIndex];
+                barrier.offset = 0;
+                barrier.size = sizes[bufferIndex];
+            }
         }
         vkCmdPipelineBarrier(computeCommandBuffer,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1293,14 +1300,22 @@ void Renderer::RecordComputeCommandBuffer() {
 
         for (uint32_t i = 0; i < bladeGroupCount; ++i) {
             const VkDeviceSize destinationOffset = static_cast<VkDeviceSize>(i) * sizeof(CullingCountReadback);
-            std::array<VkBufferCopy, 3> copyRegions = {};
-            copyRegions[0] = { offsetof(BladeDrawIndirect, vertexCount), destinationOffset + offsetof(CullingCountReadback, finalVisibleCount), sizeof(uint32_t) };
-            copyRegions[1] = { offsetof(BladeDrawIndirect, distanceVisibleCount), destinationOffset + offsetof(CullingCountReadback, distanceVisibleCount), sizeof(uint32_t) };
-            copyRegions[2] = { offsetof(BladeDrawIndirect, frustumVisibleCount), destinationOffset + offsetof(CullingCountReadback, frustumVisibleCount), sizeof(uint32_t) };
+            VkBufferCopy finalVisibleCopy = {};
+            finalVisibleCopy.srcOffset = offsetof(BladeDrawIndirect, vertexCount);
+            finalVisibleCopy.dstOffset = destinationOffset + offsetof(CullingCountReadback, finalVisibleCount);
+            finalVisibleCopy.size = sizeof(uint32_t);
             vkCmdCopyBuffer(computeCommandBuffer,
                 scene->GetBlades()[i]->GetIndirectDrawBuffer(),
                 visibilityCountReadbackBuffer,
-                static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
+                1,
+                &finalVisibleCopy);
+            std::array<VkBufferCopy, 2> counterCopyRegions = {};
+            counterCopyRegions[0] = { offsetof(CullingCounters, distanceVisibleCount), destinationOffset + offsetof(CullingCountReadback, distanceVisibleCount), sizeof(uint32_t) };
+            counterCopyRegions[1] = { offsetof(CullingCounters, frustumVisibleCount), destinationOffset + offsetof(CullingCountReadback, frustumVisibleCount), sizeof(uint32_t) };
+            vkCmdCopyBuffer(computeCommandBuffer,
+                scene->GetBlades()[i]->GetCullingCountersBuffer(),
+                visibilityCountReadbackBuffer,
+                static_cast<uint32_t>(counterCopyRegions.size()), counterCopyRegions.data());
         }
     }
 #endif

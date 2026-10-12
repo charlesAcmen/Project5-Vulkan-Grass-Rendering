@@ -89,6 +89,7 @@ PerformanceProfiler::PerformanceProfiler(Device* device, uint64_t inputBladeCoun
     metrics.inputBladeCount = inputBladeCount;
     metrics.simulatedBladeCount = inputBladeCount;
     metrics.distanceVisibleBladeCount = inputBladeCount;
+    metrics.frustumVisibleBladeCount = inputBladeCount;
     metrics.finalVisibleBladeCount = inputBladeCount;
 
     VkPhysicalDeviceProperties properties = {};
@@ -170,14 +171,17 @@ void PerformanceProfiler::EndFrame() {
     AddSample({ cpuFrameMilliseconds, impl->currentFenceWaitMilliseconds });
 }
 
-void PerformanceProfiler::SetDistanceAndFinalVisibilityCounts(uint64_t distanceVisibleBladeCount, uint64_t finalVisibleBladeCount) {
+void PerformanceProfiler::SetVisibilityCounts(uint64_t distanceVisibleBladeCount, uint64_t frustumVisibleBladeCount, uint64_t finalVisibleBladeCount) {
     const uint64_t clampedDistanceVisibleCount = std::min(distanceVisibleBladeCount, metrics.inputBladeCount);
-    const uint64_t clampedFinalVisibleCount = std::min(finalVisibleBladeCount, clampedDistanceVisibleCount);
+    const uint64_t clampedFrustumVisibleCount = std::min(frustumVisibleBladeCount, clampedDistanceVisibleCount);
+    const uint64_t clampedFinalVisibleCount = std::min(finalVisibleBladeCount, clampedFrustumVisibleCount);
     metrics.simulatedBladeCount = metrics.inputBladeCount;
     metrics.distanceVisibleBladeCount = clampedDistanceVisibleCount;
     metrics.distanceCulledBladeCount = metrics.inputBladeCount - clampedDistanceVisibleCount;
+    metrics.frustumVisibleBladeCount = clampedFrustumVisibleCount;
+    metrics.frustumCulledBladeCount = clampedDistanceVisibleCount - clampedFrustumVisibleCount;
     metrics.finalVisibleBladeCount = clampedFinalVisibleCount;
-    metrics.orientationCulledBladeCount = clampedDistanceVisibleCount - clampedFinalVisibleCount;
+    metrics.orientationCulledBladeCount = clampedFrustumVisibleCount - clampedFinalVisibleCount;
 }
 
 void PerformanceProfiler::RecordComputeBegin(VkCommandBuffer commandBuffer) {

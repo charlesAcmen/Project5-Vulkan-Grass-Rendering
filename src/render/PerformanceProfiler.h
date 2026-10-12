@@ -17,6 +17,8 @@ struct PerformanceMetrics {
     uint64_t simulatedBladeCount = 0;
     uint64_t distanceVisibleBladeCount = 0;
     uint64_t distanceCulledBladeCount = 0;
+    uint64_t frustumVisibleBladeCount = 0;
+    uint64_t frustumCulledBladeCount = 0;
     uint64_t finalVisibleBladeCount = 0;
     uint64_t orientationCulledBladeCount = 0;
 
@@ -57,7 +59,7 @@ public:
     void CollectCompletedGpuFrame();
     void MarkGpuFrameSubmitted();
     void EndFrame();
-    void SetDistanceAndFinalVisibilityCounts(uint64_t distanceVisibleBladeCount, uint64_t finalVisibleBladeCount);
+    void SetVisibilityCounts(uint64_t distanceVisibleBladeCount, uint64_t frustumVisibleBladeCount, uint64_t finalVisibleBladeCount);
 
     void RecordComputeBegin(VkCommandBuffer commandBuffer);
     void RecordComputeEnd(VkCommandBuffer commandBuffer);

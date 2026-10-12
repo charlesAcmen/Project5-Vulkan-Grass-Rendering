@@ -1180,12 +1180,14 @@ void Renderer::CollectCompletedVisibilityCounts() {
     }
 
     uint64_t distanceVisibleBladeCount = 0;
+    uint64_t frustumVisibleBladeCount = 0;
     uint64_t finalVisibleBladeCount = 0;
     for (uint32_t i = 0; i < bladeGroupCount; ++i) {
         distanceVisibleBladeCount += mappedCullingCounts[i].distanceVisibleCount;
+        frustumVisibleBladeCount += mappedCullingCounts[i].frustumVisibleCount;
         finalVisibleBladeCount += mappedCullingCounts[i].finalVisibleCount;
     }
-    performanceProfiler->SetDistanceAndFinalVisibilityCounts(distanceVisibleBladeCount, finalVisibleBladeCount);
+    performanceProfiler->SetVisibilityCounts(distanceVisibleBladeCount, frustumVisibleBladeCount, finalVisibleBladeCount);
     hasVisibilityCountsToCollect = false;
 }
 #endif

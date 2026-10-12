@@ -208,12 +208,9 @@ void main() {
     vec3 facing = normalize(vec3(cos(blade.v0.w), 0.0, sin(blade.v0.w)));
     vec3 side = normalize(cross(facing, up));
     vec3 faceNormal = normalize(cross(side, up));
-    vec3 cameraOffset = camera.cameraPosition.xyz - root;
-    float cameraDistance = length(cameraOffset);
-    float faceAlignment = cameraDistance > 0.0001
-        ? abs(dot(cameraOffset / cameraDistance, faceNormal))
+    float faceAlignment = cameraDistanceSquared > 0.00000001
+        ? abs(dot(cameraOffset * inversesqrt(cameraDistanceSquared), faceNormal))
         : 1.0;
-    //orientationCullingParameters(0.90f, 1.0f, 0.0f, 0.0f)
     const bool orientationCullingEnabled = simulation.orientationCullingParameters.y > 0.5;
     const float threshold = clamp(simulation.orientationCullingParameters.x, 0.0, 1.0);
     if (orientationCullingEnabled && faceAlignment < threshold) {

@@ -48,13 +48,12 @@ Blades::Blades(Device* device, VkCommandPool commandPool, float patchSizeMeters,
         blades.push_back(currentBlade);
     }
 
-    BladeDrawIndirect indirectDraw;
+    BladeDrawIndirect indirectDraw = {};
     indirectDraw.vertexCount = bladeCount;
     indirectDraw.instanceCount = 1;
     indirectDraw.firstVertex = 0;
     indirectDraw.firstInstance = 0;
-    indirectDraw.distanceVisibleCount = 0;
-    indirectDraw.frustumVisibleCount = 0;
+    CullingCounters cullingCounters = {};
 
     // The source buffer is a vertex buffer in phase 1 and a read/write storage buffer in later compute phases.
     const VkDeviceSize bladeBufferSize = static_cast<VkDeviceSize>(bladeCount) * sizeof(Blade);

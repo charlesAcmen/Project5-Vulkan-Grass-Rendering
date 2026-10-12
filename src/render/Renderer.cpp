@@ -1232,34 +1232,39 @@ void Renderer::RecordComputeCommandBuffer() {
     for (uint32_t i = 0; i < computeDescriptorSets.size(); ++i) {
         Blades* blades = scene->GetBlades()[i];
         const VkBuffer indirectBuffer = blades->GetIndirectDrawBuffer();
+        const VkBuffer cullingCountersBuffer = blades->GetCullingCountersBuffer();
 
         // vertexCount is the atomic allocation counter. instanceCount and the
         // first-* fields were initialized once in Blades and remain unchanged.
-        //clear up counter for the patch Debug additionally resets the
-        // appended per-stage counters;
         vkCmdFillBuffer(computeCommandBuffer, indirectBuffer,
             offsetof(BladeDrawIndirect, vertexCount), sizeof(uint32_t), 0);
-#ifndef NDEBUG
-        vkCmdFillBuffer(computeCommandBuffer, indirectBuffer,
-            offsetof(BladeDrawIndirect, distanceVisibleCount), 2 * sizeof(uint32_t), 0);
-#endif
-        VkBufferMemoryBarrier clearToComputeBarrier = {};
-        clearToComputeBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-        //write available to compute shader read/write
-        clearToComputeBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        //read and write access for the compute shader
-        clearToComputeBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
-        clearToComputeBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        clearToComputeBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        clearToComputeBarrier.buffer = indirectBuffer;
-        clearToComputeBarrier.offset = 0;
-        clearToComputeBarrier.size = sizeof(BladeDrawIndirect);
-        //same queue to submit,so use pipeline barrier
+        vkCmdFillBuffer(computeCommandBuffer, cullingCountersBuffer,
+            0, sizeof(CullingCounters), 0);
+
+        std::array<VkBufferMemoryBarrier, 2> clearToComputeBarriers = {};
+        for (VkBufferMemoryBarrier& barrier : clearToComputeBarriers) {
+            barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            //write available to compute shader read/write
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            //read and write access for the compute shader
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        }
+        clearToComputeBarriers[0].buffer = indirectBuffer;
+        clearToComputeBarriers[0].offset = 0;
+        clearToComputeBarriers[0].size = sizeof(BladeDrawIndirect);
+        clearToComputeBarriers[1].buffer = cullingCountersBuffer;
+        clearToComputeBarriers[1].offset = 0;
+        clearToComputeBarriers[1].size = sizeof(CullingCounters);
+
+        // Same queue submission: make transfer clears visible to compute.
         vkCmdPipelineBarrier(computeCommandBuffer,
-            //source stage: transfer, destination stage: compute shader
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            0, 0, nullptr, 1, &clearToComputeBarrier, 0, nullptr);
+            0, 0, nullptr,
+            static_cast<uint32_t>(clearToComputeBarriers.size()), clearToComputeBarriers.data(),
+            0, nullptr);
 
         vkCmdBindDescriptorSets(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout, 2, 1, &computeDescriptorSets[i], 0, nullptr);
         const uint32_t bladeCount = blades->GetBladeCount();

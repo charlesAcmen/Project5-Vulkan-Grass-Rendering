@@ -1127,23 +1127,23 @@ void Renderer::CreateVisibilityCountReadback() {
         return;
     }
 
-    const VkDeviceSize size = static_cast<VkDeviceSize>(bladeGroupCount) * sizeof(uint32_t);
+    const VkDeviceSize size = static_cast<VkDeviceSize>(bladeGroupCount) * sizeof(CullingCountReadback);
     BufferUtils::CreateBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         visibilityCountReadbackBuffer, visibilityCountReadbackMemory);
     void* mappedMemory = nullptr;
     if (vkMapMemory(logicalDevice, visibilityCountReadbackMemory, 0, size, 0,
             &mappedMemory) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to map orientation-culling count readback buffer");
+        throw std::runtime_error("Failed to map culling-count readback buffer");
     }
-    mappedVisibilityCounts = static_cast<uint32_t*>(mappedMemory);
+    mappedCullingCounts = static_cast<CullingCountReadback*>(mappedMemory);
 }
 
 void Renderer::DestroyVisibilityCountReadback() {
-    if (mappedVisibilityCounts != nullptr) {
+    if (mappedCullingCounts != nullptr) {
         //only unmap when destorying
         vkUnmapMemory(logicalDevice, visibilityCountReadbackMemory);
-        mappedVisibilityCounts = nullptr;
+        mappedCullingCounts = nullptr;
     }
     if (visibilityCountReadbackBuffer != VK_NULL_HANDLE) {
         vkDestroyBuffer(logicalDevice, visibilityCountReadbackBuffer, nullptr);
@@ -1153,19 +1153,21 @@ void Renderer::DestroyVisibilityCountReadback() {
         vkFreeMemory(logicalDevice, visibilityCountReadbackMemory, nullptr);
         visibilityCountReadbackMemory = VK_NULL_HANDLE;
     }
-    bladeGroupC ount = 0;
+    bladeGroupCount = 0;
 }
 
 void Renderer::CollectCompletedVisibilityCounts() {
-    if (!hasVisibilityCountsToCollect || mappedVisibilityCounts == nullptr) {
+    if (!hasVisibilityCountsToCollect || mappedCullingCounts == nullptr) {
         return;
     }
 
-    uint64_t visibleBladeCount = 0;
+    uint64_t distanceVisibleBladeCount = 0;
+    uint64_t finalVisibleBladeCount = 0;
     for (uint32_t i = 0; i < bladeGroupCount; ++i) {
-        visibleBladeCount += mappedVisibilityCounts[i];
+        distanceVisibleBladeCount += mappedCullingCounts[i].distanceVisibleCount;
+        finalVisibleBladeCount += mappedCullingCounts[i].finalVisibleCount;
     }
-    performanceProfiler->SetOrientationCullingCounts(visibleBladeCount);
+    performanceProfiler->SetDistanceAndFinalVisibilityCounts(distanceVisibleBladeCount, finalVisibleBladeCount);
     hasVisibilityCountsToCollect = false;
 }
 #endif
@@ -1213,8 +1215,14 @@ void Renderer::RecordComputeCommandBuffer() {
 
         // vertexCount is the atomic allocation counter. instanceCount and the
         // first-* fields were initialized once in Blades and remain unchanged.
-        //clear up counter for the patch
-        vkCmdFillBuffer(computeCommandBuffer, indirectBuffer, 0, sizeof(uint32_t), 0);
+        //clear up counter for the patch Debug additionally resets the
+        // appended per-stage counters;
+        vkCmdFillBuffer(computeCommandBuffer, indirectBuffer,
+            offsetof(BladeDrawIndirect, vertexCount), sizeof(uint32_t), 0);
+#ifndef NDEBUG
+        vkCmdFillBuffer(computeCommandBuffer, indirectBuffer,
+            offsetof(BladeDrawIndirect, distanceVisibleCount), 2 * sizeof(uint32_t), 0);
+#endif
         VkBufferMemoryBarrier clearToComputeBarrier = {};
         clearToComputeBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
         //write available to compute shader read/write
@@ -1254,7 +1262,7 @@ void Renderer::RecordComputeCommandBuffer() {
             barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             barrier.buffer = scene->GetBlades()[i]->GetIndirectDrawBuffer();
             barrier.offset = 0;
-            barrier.size = sizeof(uint32_t);
+            barrier.size = sizeof(BladeDrawIndirect);
         }
         vkCmdPipelineBarrier(computeCommandBuffer,
             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1264,14 +1272,15 @@ void Renderer::RecordComputeCommandBuffer() {
             0, nullptr);
 
         for (uint32_t i = 0; i < bladeGroupCount; ++i) {
-            VkBufferCopy copyRegion = {};
-            copyRegion.srcOffset = 0;
-            copyRegion.dstOffset = static_cast<VkDeviceSize>(i) * sizeof(uint32_t);
-            copyRegion.size = sizeof(uint32_t);
+            const VkDeviceSize destinationOffset = static_cast<VkDeviceSize>(i) * sizeof(CullingCountReadback);
+            std::array<VkBufferCopy, 3> copyRegions = {};
+            copyRegions[0] = { offsetof(BladeDrawIndirect, vertexCount), destinationOffset + offsetof(CullingCountReadback, finalVisibleCount), sizeof(uint32_t) };
+            copyRegions[1] = { offsetof(BladeDrawIndirect, distanceVisibleCount), destinationOffset + offsetof(CullingCountReadback, distanceVisibleCount), sizeof(uint32_t) };
+            copyRegions[2] = { offsetof(BladeDrawIndirect, frustumVisibleCount), destinationOffset + offsetof(CullingCountReadback, frustumVisibleCount), sizeof(uint32_t) };
             vkCmdCopyBuffer(computeCommandBuffer,
                 scene->GetBlades()[i]->GetIndirectDrawBuffer(),
                 visibilityCountReadbackBuffer,
-                1, &copyRegion);
+                static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
         }
     }
 #endif
@@ -1433,6 +1442,12 @@ void Renderer::Frame() {
     if (uiLayer != nullptr) {
         uiLayer->PrepareFrame(scene->GetSimulationParameters(), camera->GetFrame(), performanceProfiler->GetMetrics());
     }
+
+#ifndef NDEBUG
+    // Preset application replaces the complete parameter block, so restore
+    // this non-user-facing instrumentation flag before every Debug dispatch.
+    scene->GetSimulationParameters().distanceCullingParameters.w = 1.0f;
+#endif
 
     // Time and UI controls share one mapped UBO. The completed frame fence
     // above guarantees that no earlier compute dispatch can still read it.

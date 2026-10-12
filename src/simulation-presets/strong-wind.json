@@ -15,5 +15,7 @@
   "recovery_rate_scale": 0.90,
   "front_gravity_scale": 0.25,
   "orientation_culling_enabled": true,
-  "orientation_alignment_threshold": 0.90
+  "orientation_alignment_threshold": 0.90,
+  "distance_culling_enabled": true,
+  "distance_culling_max_distance_meters": 120.0
 }

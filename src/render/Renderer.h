@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 
 #include "Device.h"
@@ -113,12 +115,18 @@ private:
     ImGuiVulkanLayer* uiLayer = nullptr;
 
 #ifndef NDEBUG
-    // One uint32_t vertexCount is copied from every indirect command after
-    // compute. This Debug-only readback makes the overlay report actual
-    // compaction results without adding a CPU/GPU transfer to Release builds.
+    // Compute appends these counters to every indirect draw command. They are
+    // copied into host-visible memory only for the Debug performance overlay.
+    struct CullingCountReadback {
+        uint32_t finalVisibleCount;
+        uint32_t distanceVisibleCount;
+        uint32_t frustumVisibleCount;
+    };
+    static_assert(sizeof(CullingCountReadback) == 3 * sizeof(uint32_t), "Unexpected culling readback layout");
+
     VkBuffer visibilityCountReadbackBuffer = VK_NULL_HANDLE;
     VkDeviceMemory visibilityCountReadbackMemory = VK_NULL_HANDLE;
-    uint32_t* mappedVisibilityCounts = nullptr;
+    CullingCountReadback* mappedCullingCounts = nullptr;
     uint32_t bladeGroupCount = 0;
     bool hasVisibilityCountsToCollect = false;
 

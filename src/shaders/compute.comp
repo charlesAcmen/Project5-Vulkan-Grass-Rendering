@@ -56,8 +56,7 @@ layout(std430, set = 2, binding = 2) buffer VisibleBlades {
     Blade blades[];
 } visibleBlades;
 
-// This binary layout matches VkDrawIndirectCommand. The CPU clears only
-// vertexCount before each dispatch; the remaining draw fields stay constant.
+// This block exactly matches VkDrawIndirectCommand
 layout(std430, set = 2, binding = 3) buffer DrawCommand {
     //cleaned up before each dispatch
     uint vertexCount;

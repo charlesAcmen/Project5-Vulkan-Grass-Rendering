@@ -115,8 +115,8 @@ private:
     ImGuiVulkanLayer* uiLayer = nullptr;
 
 #ifndef NDEBUG
-    // Compute appends these counters to every indirect draw command. They are
-    // copied into host-visible memory only for the Debug performance overlay.
+    // Compute keeps these counters separate from indirect draw commands, then
+    // copies them into host-visible memory for the Debug performance overlay.
     struct CullingCountReadback {
         uint32_t finalVisibleCount;
         uint32_t distanceVisibleCount;

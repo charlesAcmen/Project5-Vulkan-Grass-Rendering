@@ -27,6 +27,17 @@ layout(location = 3) in vec4 inUp[];
 
 layout(location = 0) out float outHeightFactor;
 layout(location = 1) out vec3 outNormal;
+layout(location = 2) out float outColorVariation;
+
+// Stable, tile-local variation without a texture lookup. Quantizing the root
+// position makes nearby blades share a subtle palette shift instead of turning
+// the field into per-blade color noise.
+float hashGrid(vec2 positionXZ) {
+    vec2 cell = floor(positionXZ * 4.0);
+    vec3 p = fract(vec3(cell.xyx) * 0.1031);
+    p += dot(p, p.yzx + 33.33);
+    return fract((p.x + p.y) * p.z);
+}
 
 void main() {
     // u: position along the centerline, from the root (0) to the tip (1).

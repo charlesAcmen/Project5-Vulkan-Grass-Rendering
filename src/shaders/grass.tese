@@ -28,6 +28,7 @@ layout(location = 3) in vec4 inUp[];
 layout(location = 0) out float outHeightFactor;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out float outColorVariation;
+layout(location = 3) out vec3 outViewDirection;
 
 // Stable, tile-local variation without a texture lookup. Quantizing the root
 // position makes nearby blades share a subtle palette shift instead of turning
@@ -67,8 +68,17 @@ void main() {
     float orientation = inV0[0].w;
     vec3 facing = normalize(vec3(cos(orientation), 0.0, sin(orientation)));
     vec3 side = normalize(cross(facing, up));
-    float taper = mix(1.0, 0.12, u);
-    float halfWidth = 0.5 * inV2[0].w * taper;
+    float bladeSeed = hashGrid(v0.xz);
+
+    // Keep all ribbon roots equally wide, then use the stable blade seed to
+    // select a narrow, standard, or broad taper. These are analytic profiles:
+    // they add no per-blade storage, descriptor, texture lookup, or draw call.
+    float narrowProfile = pow(oneMinusU, 1.15);
+    float standardProfile = pow(oneMinusU, 0.90);
+    float broadProfile = pow(oneMinusU, 0.72) * (1.0 + 0.08 * sin(3.14159265 * u));
+    float widthProfile = mix(narrowProfile, standardProfile, smoothstep(0.26, 0.40, bladeSeed));
+    widthProfile = mix(widthProfile, broadProfile, smoothstep(0.60, 0.74, bladeSeed));
+    float halfWidth = 0.5 * inV2[0].w * widthProfile;
     // Ribbon surface: S(u,v) = B(u) + (2v-1) * halfWidth(u) * side.
     // B(u) is the curved root-to-tip centerline; halfWidth(u) narrows toward the tip.
     // side is the lateral blade direction; (2v-1) maps v from [0,1] to [-1,1].
@@ -79,6 +89,12 @@ void main() {
     // direction along its curved centerline (tangent). Their cross product is
     // the geometric normal that should receive lighting.
     outNormal = normalize(cross(side, tangent));
-    outColorVariation = hashGrid(v0.xz);
-    gl_Position = camera.proj * camera.view * grassModel.model * vec4(worldPosition, 1.0);
+    outColorVariation = bladeSeed;
+
+    // Pass the per-fragment view direction from the same scene-space position
+    // used by gl_Position. The fragment shader uses it only for a cheap rim
+    // term; no new camera descriptor is required.
+    vec3 scenePosition = (grassModel.model * vec4(worldPosition, 1.0)).xyz;
+    outViewDirection = normalize(camera.cameraPosition.xyz - scenePosition);
+    gl_Position = camera.proj * camera.view * vec4(scenePosition, 1.0);
 }

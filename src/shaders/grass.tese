@@ -56,6 +56,13 @@ void main() {
         + 2.0 * oneMinusU * u * v1
         + u * u * v2;
 
+    // The derivative points along the actual curved centerline. It is the
+    // ribbon's longitudinal surface direction, unlike the world-space up
+    // vector used by the original flat-lighting approximation.
+    vec3 tangent = normalize(
+        2.0 * oneMinusU * (v1 - v0)
+        + 2.0 * u * (v2 - v1));
+
     // Orientation defines a stable ribbon facing direction even for an initially vertical blade.
     float orientation = inV0[0].w;
     vec3 facing = normalize(vec3(cos(orientation), 0.0, sin(orientation)));
@@ -68,6 +75,10 @@ void main() {
     vec3 worldPosition = centerline + side * ((2.0 * v - 1.0) * halfWidth);
 
     outHeightFactor = u;
-    outNormal = normalize(cross(side, up));
+    // A ribbon surface has one direction across its width (side) and one
+    // direction along its curved centerline (tangent). Their cross product is
+    // the geometric normal that should receive lighting.
+    outNormal = normalize(cross(side, tangent));
+    outColorVariation = hashGrid(v0.xz);
     gl_Position = camera.proj * camera.view * grassModel.model * vec4(worldPosition, 1.0);
 }

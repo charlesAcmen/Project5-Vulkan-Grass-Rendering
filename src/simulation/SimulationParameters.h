@@ -52,7 +52,7 @@ struct alignas(16) SimulationParameters {
           windAmplitudesAndAdvectionSpeeds(0.55f, 0.25f, 1.20f, 0.45f),
           windFieldSpatialScales(0.020f, 0.020f, 0.014f, 0.014f),
           gravityDirectionAndPullRate(0.0f, -1.0f, 0.0f, 0.90f),
-          orientationCullingParameters(0.90f, 1.0f, 0.0f, 0.0f),
+          orientationCullingParameters(0.90f, 0.0f, 0.0f, 0.0f),
           distanceCullingParameters(120.0f, 1.0f, 0.0f, 0.0f),
           frustumCullingParameters(0.0f, 1.0f, 0.0f, 0.0f) {
     }

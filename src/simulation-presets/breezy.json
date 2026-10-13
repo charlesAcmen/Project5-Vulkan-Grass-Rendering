@@ -1,7 +1,7 @@
 {
   "id": "breezy",
   "label": "Breezy",
-  "description": "Default: visibly active grass with moderate, slow-moving gusts.",
+  "description": "Default: visibly active grass with moderate, slow-moving gusts; orientation culling starts disabled.",
   "wind_direction": [1.0, 0.0, 0.35],
   "wind_field_scale": 1.70,
   "primary_amplitude": 0.70,
@@ -14,7 +14,7 @@
   "gravity_pull_rate": 0.90,
   "recovery_rate_scale": 0.95,
   "front_gravity_scale": 0.25,
-  "orientation_culling_enabled": true,
+  "orientation_culling_enabled": false,
   "orientation_alignment_threshold": 0.90,
   "distance_culling_enabled": true,
   "distance_culling_max_distance_meters": 120.0
